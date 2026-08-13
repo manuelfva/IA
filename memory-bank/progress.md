@@ -1,0 +1,43 @@
+# Progress: Test-IA
+
+## What Works
+
+- **Domain layer**: All interfaces (`IGetADUserInfo`, `IGetADGroupInfo`), DTOs (`UserDto`, `GroupDto`), and domain exceptions (`DomainException`, `UserNotFoundException`, `GroupNotFoundException`) are implemented with XML documentation.
+- **Application layer**: 
+  - `ADDomainDiscoveryService` — dynamic domain, DC, and Base DN discovery.
+  - `GetADUserInfoService` — LDAP user search with safe filter escaping.
+  - `GetADGroupInfoService` — LDAP group search with safe filter escaping.
+  - `LdapFilterHelper` — LDAP special character escaping utility.
+  - `ServiceCollectionExtensions` — DI registration extension method.
+- **Logging layer**: `ILoggerService` interface and `LoggingService` implementation with XML documentation.
+- **ConsoleApp**: `Program.cs` with full DI setup, real service execution, structured output via `ILoggerService`.
+- **Tests**: Unit tests for both services and logging project using xUnit, NSubstitute, and FluentAssertions.
+- **Project files**: All `.csproj` files correctly configured with proper references and packages.
+- **Solution file**: `Test-IA.slnx` has been regenerated and includes all 5 projects.
+
+## What's Left to Build
+
+1. **Validate build**: Run `dotnet build` to confirm compilation succeeds.
+2. **Run tests**: Execute `dotnet test` to confirm all unit tests pass.
+3. **Runtime validation**: Run the console app on a domain-joined Windows machine to verify real AD DS connectivity.
+4. **Generate README**: Only after successful build and test validation.
+
+## Current Status
+
+**Phase**: Initial implementation complete. Validation pending.
+
+The codebase is complete and the solution file has been fixed. Ready for validation.
+
+## Known Issues
+
+1. **No README.md**: Documentation has not been generated yet (requires successful validation first).
+2. **No `.gitignore`**: Has been created at the repository root.
+
+## Evolution of Project Decisions
+
+- **Initial decision**: Use `System.DirectoryServices.Protocols` for LDAP (not `System.DirectoryServices` alone) for full control over LDAP operations.
+- **Decision**: `ADDomainDiscoveryService.Discover()` is `virtual` to allow test overrides. This avoids adding an interface for the discovery service, keeping the test setup simpler.
+- **Decision**: `LdapFilterHelper` is `internal static` rather than a registered service, since it has no dependencies and is only used internally.
+- **Decision**: No `IOptions<T>` configuration is used because the application has no externalizable configuration — everything is discovered dynamically.
+- **Decision**: `ILogger<T>` is registered as `Singleton` in the console app because `LoggerFactory.Create()` returns a singleton.
+- **Decision**: Sample `samAccountName` values (`MFVA649T` and `employees of MADRID`) are `const` in `Program.cs` rather than configurable, since the console app is a demonstration.
