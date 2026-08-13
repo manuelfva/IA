@@ -1,0 +1,133 @@
+{
+	"folders": [
+		{
+			"path": ".",
+			"name": "Repository"
+		}
+	],
+	"settings": {
+		"repository.type": "dotnet",
+		"repository.description": "Enterprise .NET solution with C# services, tests and PowerShell automation.",
+
+		"files.exclude": {
+			"**/bin": true,
+			"**/obj": true,
+			"**/.git": true,
+			"**/.vs": true,
+			"**/packages": true
+		},
+
+		"search.exclude": {
+			"**/bin": true,
+			"**/obj": true,
+			"**/.git": true,
+			"**/.vs": true,
+			"**/packages": true,
+			"**/*.dll": true,
+			"**/*.pdb": true,
+			"**/TestResults": true,
+			"**/coverage": true
+		},
+
+		"agent.context": {
+			"loadOnce": true,
+
+			"requiredFiles": [
+				".cline/rules/solution-memory-bank.md",
+				".cline/rules/solution-architecture.md",
+				".cline/rules/solution-conventions.md",
+				".cline/rules/solution-csharp.md",
+				".cline/rules/solution-readme.md",
+				".cline/rules/solution-requirements.md",
+				".cline/rules/solution-workflow.md"	
+			],
+			
+			"searchLimits": {
+				"maxTargetedSearches": 3,
+				"maxTimeMinutes": 5,
+				"allowExtensionWithJustification": true
+			},
+
+			"importantPaths": {
+				"source": [
+					"src"
+				],
+				"tests": [
+					"tests"
+				],
+				"scripts": [
+					"scripts"
+				],
+				"documentation": [
+					"docs",
+					".cline/rules"
+				]
+			},
+
+			"ignorePaths": [
+				"bin",
+				"obj",
+				".git",
+				".vs",
+				"packages",
+				"TestResults",
+				"coverage"
+			],
+
+			"dynamicDate": {
+    				"enabled": true,
+   				 "format": "YYYY-MM-DD HH:mm",
+   				 "placeholder": "{{current_date_time}}"
+  			},
+			
+			"cache": {
+   					"enabled": true, 
+    				"strategy": "session"
+ 			 }
+		},
+
+		"agent.workflow": {
+			"followRepositoryWorkflow": true,
+			"workflowVersion": "2.0",
+
+			"validationGate": {
+				"required": true,
+				"cleanOptional": true,
+				"steps": [
+					"build",
+					"test",
+					"run"
+				],
+
+				"stopAfterSuccess": true,
+				"doNotRepeatSuccessfulValidation": true,
+
+				"retryOnFailure": {
+					"enabled": true,
+					"maxRetries": 3
+				}
+			},
+
+			"documentation": {
+				"enabled": true,
+
+				"generateOnlyAfterValidation": true,
+
+				"requiredValidation": [
+					"build_success",
+					"tests_success",
+					"runtime_success"
+				],
+
+				"readmeTemplate": ".cline/rules/solution-readme.md"
+			}
+		},
+
+		"commands": {
+			"clean": "dotnet clean",
+			"build": "dotnet build",
+			"test": "dotnet test",
+			"run": "dotnet run"
+		}
+	}
+}

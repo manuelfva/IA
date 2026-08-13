@@ -1,0 +1,52 @@
+# .NET / C#
+bin/
+obj/
+*.user
+*.suo
+.vs/
+packages/
+publish/
+artifacts/
+output/
+*.dll
+*.pdb
+*.exe
+*.deps.json
+*.runtimeconfig.json
+
+# Build output
+**/bin/
+**/obj/
+
+# NuGet
+nuget.config
+packages.lock.json
+*.nupkg
+
+# IDE
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# Test results
+TestResults/
+coverage/
+
+# Logs
+*.log
+*.tmp
+*.cache
+
+# Secrets and config
+.env
+.env.*
+*.pem
+*.key
+*.secrets
+
+# OS files
+.DS_Store
+Thumbs.db
