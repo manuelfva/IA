@@ -35,6 +35,7 @@ src/
   Test-IA.Application/   # Service implementations, ADDomainDiscoveryService, LdapFilterHelper
   Test-IA.Logging/       # ILoggerService interface and LoggingService implementation
   Test-IA.ConsoleApp/    # Composition root (Program.cs), demonstrates real service execution
+  Test-IA.WebApp/        # ASP.NET Core Razor Pages web application (Glassmorphism + Aurora UI)
 tests/
   Test-IA.Tests/         # xUnit tests with NSubstitute and FluentAssertions
 ```

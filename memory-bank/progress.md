@@ -9,11 +9,18 @@
   - `GetADGroupInfoService` — LDAP group search with safe filter escaping.
   - `LdapFilterHelper` — LDAP special character escaping utility.
   - `ServiceCollectionExtensions` — DI registration extension method.
-- **Logging layer**: `ILoggerService` interface and `LoggingService` implementation with XML documentation.
+- **Logging layer**: `ILoggerService` interface and `LoggingService` implementation with XML documentation. Added `LogError(Exception, string, params object?[])` overload.
 - **ConsoleApp**: `Program.cs` with full DI setup, real service execution, structured output via `ILoggerService`.
 - **Tests**: Unit tests for both services and logging project using xUnit, NSubstitute, and FluentAssertions.
 - **Project files**: All `.csproj` files correctly configured with proper references and packages.
-- **Solution file**: `Test-IA.slnx` has been regenerated and includes all 5 projects.
+- **Solution file**: `Test-IA.slnx` has been regenerated and includes all 6 projects (4 source + 1 test + 1 WebApp).
+- **WebApp**: ASP.NET Core Razor Pages application with:
+  - `IndexModel` page model with `OnPost()` handling both user and group searches.
+  - `launchSettings.json` with HTTP/HTTPS URLs.
+  - Conditional `UseHttpsRedirection()` for Development mode.
+  - `ILoggerService` injected into `IndexModel` for error logging.
+  - **Glassmorphism + Aurora UI**: Dark theme, animated aurora background, frosted glass components, gradient text, luminous buttons.
+  - CSS custom properties, `backdrop-filter: blur()`, `@keyframes` animations.
 
 ## What's Left to Build
 
@@ -26,7 +33,7 @@
 
 **Phase**: Initial implementation complete. Validation pending.
 
-The codebase is complete and the solution file has been fixed. Ready for validation.
+The codebase is complete with both ConsoleApp and WebApp presentation layers. Ready for validation.
 
 ## Known Issues
 
@@ -41,3 +48,6 @@ The codebase is complete and the solution file has been fixed. Ready for validat
 - **Decision**: No `IOptions<T>` configuration is used because the application has no externalizable configuration — everything is discovered dynamically.
 - **Decision**: `ILogger<T>` is registered as `Singleton` in the console app because `LoggerFactory.Create()` returns a singleton.
 - **Decision**: Sample `samAccountName` values (`MFVA649T` and `employees of MADRID`) are `const` in `Program.cs` rather than configurable, since the console app is a demonstration.
+- **Decision**: WebApp uses Razor Pages (not MVC Controllers) for a simpler presentation layer.
+- **Decision**: WebApp HTTPS redirect is disabled in Development mode to allow POST requests to reach page handlers.
+- **Decision**: WebApp UI uses Glassmorphism + Aurora design — dark theme with animated aurora background and frosted glass components.

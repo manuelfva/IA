@@ -19,6 +19,8 @@ This project exists to demonstrate a production-ready approach to accessing on-p
 
 ### User Experience Flow
 
+#### Console Application
+
 1. The user runs the console application on a domain-joined Windows machine.
 2. The application silently discovers the Active Directory environment using Windows APIs.
 3. It connects to a Domain Controller via LDAP using Windows Integrated Authentication.
@@ -27,6 +29,17 @@ This project exists to demonstrate a production-ready approach to accessing on-p
    - Looks up a group by `samAccountName` and displays their members.
 5. All output is structured through the logging abstraction (Console provider in this case).
 6. If the machine is not domain-joined or discovery fails, the application fails with a clear error message.
+
+#### Web Application
+
+1. The user opens the WebApp in a browser (HTTP or HTTPS).
+2. The page displays two search forms side by side: one for users, one for groups.
+3. Each form has a text input for `samAccountName` and a search button.
+4. On submit, the POST request reaches the `OnPost()` handler in `IndexModel`.
+5. The handler inspects the `SearchAction` hidden field to determine which service to call.
+6. The service performs a real LDAP search against Active Directory.
+7. Results are rendered back into the page and displayed in glass-morphism styled panels.
+8. Errors are displayed in a glass-morphism alert panel with structured logging.
 
 ### Expected Behavior
 

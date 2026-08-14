@@ -2,20 +2,23 @@
 
 ## Architecture
 
-**Clean Architecture** with four layers:
+**Clean Architecture** with five layers:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   Test-IA.ConsoleApp                        │
+│               Test-IA.WebApp (Presentation)                 │
+│  (Razor Pages, Glassmorphism + Aurora UI)                   │
+├─────────────────────────────────────────────────────────────┤
+│               Test-IA.ConsoleApp                            │
 │  (Composition Root, DI registration, real execution)        │
 ├─────────────────────────────────────────────────────────────┤
-│                   Test-IA.Application                       │
+│               Test-IA.Application                           │
 │  (Service implementations, AD discovery, LDAP operations)   │
 ├─────────────────────────────────────────────────────────────┤
-│                   Test-IA.Domain                            │
+│               Test-IA.Domain                                │
 │  (Interfaces, DTOs, Domain Exceptions)                      │
 ├─────────────────────────────────────────────────────────────┤
-│                   Test-IA.Logging                           │
+│               Test-IA.Logging                               │
 │  (ILoggerService abstraction over Microsoft.Extensions.)    │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -23,12 +26,14 @@
 ### Dependency Flow
 
 ```
+WebApp → Application → Domain
 ConsoleApp → Application → Domain
+WebApp → Logging
 ConsoleApp → Logging
 Tests → Application, Domain, Logging
 ```
 
-Domain has NO external dependencies. Application depends only on Domain (plus Microsoft.Extensions and System.DirectoryServices packages). Logging is standalone.
+Domain has NO external dependencies. Application depends only on Domain (plus Microsoft.Extensions and System.DirectoryServices packages). Logging is standalone. WebApp and ConsoleApp are presentation layers that depend on Application and Logging.
 
 ## Key Technical Decisions
 
@@ -100,6 +105,10 @@ The `ILoggerService` interface wraps `Microsoft.Extensions.Logging.ILogger` to p
      │  UserDto, GroupDto                   │
      │  DomainException, UserNotFoundEx     │
      │  GroupNotFoundEx                     │
+     
+
+```
+
 ## Critical Implementation Paths
 
 ### User Lookup Flow

@@ -10,6 +10,8 @@
 | DI Container | Microsoft.Extensions.DependencyInjection |
 | Logging | Microsoft.Extensions.Logging.Abstractions + Console |
 | AD Access | System.DirectoryServices + System.DirectoryServices.Protocols |
+| Web Framework | ASP.NET Core Razor Pages |
+| Web UI | Glassmorphism + Aurora (CSS custom properties, backdrop-filter, @keyframes) |
 | Unit Testing | xUnit 2.9.3 |
 | Mocking | NSubstitute 6.2.0 |
 | Assertions | FluentAssertions 8.10.0 |
@@ -50,6 +52,7 @@ dotnet run --project src/Test-IA.ConsoleApp/Test-IA.ConsoleApp.csproj
 | Test-IA.Application | Test-IA.Domain, Microsoft.Extensions.DependencyInjection.Abstractions, Microsoft.Extensions.Logging.Abstractions, System.DirectoryServices, System.DirectoryServices.Protocols |
 | Test-IA.Logging | Microsoft.Extensions.Logging.Abstractions |
 | Test-IA.ConsoleApp | Test-IA.Application, Test-IA.Logging, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Logging.Console |
+| Test-IA.WebApp | Test-IA.Application, Test-IA.Logging, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting |
 | Test-IA.Tests | Test-IA.Domain, Test-IA.Application, Test-IA.Logging, xUnit, NSubstitute, FluentAssertions |
 
 ## NuGet Packages (Version 10.0.11 unless noted)
