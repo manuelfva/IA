@@ -70,10 +70,10 @@ The `ILoggerService` interface wraps `Microsoft.Extensions.Logging.ILogger` to p
 ## Component Relationships
 
 ```
-                    ┌──────────────────┐
-                    │  Program.cs      │
-                    │  (ConsoleApp)    │
-                    └────────┬─────────┘
+                    ┌──────────────────┐                    ┌──────────────────┐
+                    │  Program.cs      │                    │  IndexModel      │
+                    │  (ConsoleApp)    │                    │  (WebApp)        │
+                    └────────┬─────────┘                    └────────┬─────────┘
                              │ uses
               ┌──────────────┼──────────────┐
               │              │              │
@@ -124,14 +124,17 @@ The `ILoggerService` interface wraps `Microsoft.Extensions.Logging.ILogger` to p
 
 ### Group Lookup Flow
 
-1. `Program.Main` → resolves `IGetADGroupInfo` from DI
+1. `Program.Main` / `IndexModel.OnPost()` → resolves `IGetADGroupInfo` from DI
 2. `GetADGroupInfoService.GetGroup(samAccountName)` validates input
 3. Calls `ADDomainDiscoveryService.Discover()` → gets domain, DC, Base DN
 4. Creates `LdapConnection` to DC with `AuthType.Negotiate`
 5. Escapes `samAccountName` via `LdapFilterHelper.Escape()`
 6. Executes LDAP search: `(&(objectCategory=group)(sAMAccountName={escaped}))`
-7. Extracts `displayName`, `member` (as string array)
-8. Returns `GroupDto`
+7. Extracts `displayName`, `member` (as string array of Distinguished Names)
+8. Calls `ResolveMemberDisplayNamesAsync()` to resolve each member DN to its `displayName` attribute
+   - For each DN, performs an LDAP search with `SearchScope.Subtree` for the `displayName` attribute
+   - Falls back to DN if resolution fails (logged as warning)
+9. Returns `GroupDto` with display names instead of DNs
 
 ## Design Patterns in Use
 

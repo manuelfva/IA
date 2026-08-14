@@ -99,6 +99,7 @@ dotnet run --project src/Test-IA.ConsoleApp/Test-IA.ConsoleApp.csproj
 
 - User: `(&(objectCategory=person)(objectClass=user)(sAMAccountName={escaped}))`
 - Group: `(&(objectCategory=group)(sAMAccountName={escaped}))`
+- Member DN resolution: `(distinguishedName={escapedDN})` with `SearchScope.Subtree` to find `displayName` attribute
 
 ### Resource Disposal
 

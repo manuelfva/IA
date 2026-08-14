@@ -38,7 +38,8 @@ This project exists to demonstrate a production-ready approach to accessing on-p
 4. On submit, the POST request reaches the `OnPost()` handler in `IndexModel`.
 5. The handler inspects the `SearchAction` hidden field to determine which service to call.
 6. The service performs a real LDAP search against Active Directory.
-7. Results are rendered back into the page and displayed in glass-morphism styled panels.
+7. For group searches, each member's Distinguished Name is resolved to its `displayName` attribute via additional LDAP searches.
+8. Results are rendered back into the page and displayed in glass-morphism styled panels.
 8. Errors are displayed in a glass-morphism alert panel with structured logging.
 
 ### Expected Behavior

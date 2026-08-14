@@ -7,6 +7,7 @@
   - `ADDomainDiscoveryService` — dynamic domain, DC, and Base DN discovery.
   - `GetADUserInfoService` — LDAP user search with safe filter escaping.
   - `GetADGroupInfoService` — LDAP group search with safe filter escaping.
+  - `ResolveMemberDisplayNamesAsync` — resolves each group member's Distinguished Name to its `displayName` attribute via LDAP searches.
   - `LdapFilterHelper` — LDAP special character escaping utility.
   - `ServiceCollectionExtensions` — DI registration extension method.
 - **Logging layer**: `ILoggerService` interface and `LoggingService` implementation with XML documentation. Added `LogError(Exception, string, params object?[])` overload.

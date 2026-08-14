@@ -17,6 +17,8 @@ The project has been created with all core services implemented and a WebApp pre
 - **Added error logging**: Injected `ILoggerService` into `IndexModel` and added `LogError(Exception, string, params object?[])` overload to the logging abstraction.
 - **UI redesign #1 (Professional)**: Gradient hero, elevated cards, colored icons, hover effects, animated alerts and results.
 - **UI redesign #2 (Glassmorphism + Aurora)**: Complete visual overhaul — dark theme (`#0a0a1a`), animated aurora background (4 floating gradient orbs), frosted glass components (`backdrop-filter: blur(20px)`), gradient text, luminous buttons.
+- **Implemented member DN to display name resolution**: `GetADGroupInfoService` now resolves each group member's Distinguished Name to its `displayName` attribute by performing additional LDAP searches. Falls back to DN if resolution fails (logged as warning).
+- **Fixed member resolution bug**: Changed `SearchScope.Base` to `SearchScope.Subtree` in `ResolveMemberDisplayNamesAsync` — `SearchScope.Base` only searches the base DN object itself, not the entire directory, so member objects could never be found.
 
 ## Next Steps
 
@@ -55,3 +57,5 @@ The project has been created with all core services implemented and a WebApp pre
 - **ASP.NET Core HTTPS redirect**: In Development mode, `UseHttpsRedirection()` must be disabled (or made conditional) to allow HTTP POST requests to reach page handlers. Otherwise, the middleware intercepts POSTs and tries to redirect to HTTPS, which fails when no HTTPS port is configured.
 - **Model binding in Razor Pages**: Form field `name` attributes must exactly match the property names on the page model. Mismatched names result in `null` values being bound.
 - **Glassmorphism CSS**: `backdrop-filter: blur(20px)` requires `-webkit-backdrop-filter` for Safari compatibility. Semi-transparent backgrounds (`rgba(255,255,255,0.10)`) combined with blur create the frosted glass effect.
+- **Member DN resolution**: `ResolveMemberDisplayNamesAsync()` performs an LDAP search for each member DN using `SearchScope.Subtree` to find the `displayName` attribute. Falls back to DN if resolution fails (logged as warning).
+- **SearchScope.Subtree vs Base**: `SearchScope.Base` only searches the object at the base DN itself, not the entire directory. `SearchScope.Subtree` searches the entire directory tree, which is required to find member objects by their Distinguished Name.
