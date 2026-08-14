@@ -30,6 +30,7 @@ The solution uses **Clean Architecture** with the following layers:
 graph TB
     subgraph Presentation
         CA[Test-IA.ConsoleApp]
+        WA[Test-IA.WebApp]
     end
     subgraph Application
         App[Test-IA.Application]
@@ -42,6 +43,8 @@ graph TB
     end
     CA --> App
     CA --> Log
+    WA --> App
+    WA --> Log
     App --> Dom
     App --> Log
 ```
@@ -54,6 +57,7 @@ graph TB
 | **Application** | Service implementations, Active Directory discovery, LDAP connection management, DI registration |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
 | **ConsoleApp** | Composition root, service registration, and demonstration of real AD operations |
+| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface for AD lookups |
 
 ## Projects
 
@@ -63,6 +67,7 @@ graph TB
 | Test-IA.Application | Class Library | net10.0 | Service implementations, AD discovery, LDAP access | Test-IA.Domain |
 | Test-IA.Logging | Class Library | net10.0 | Logging abstraction | None |
 | Test-IA.ConsoleApp | Console Application | net10.0 | Composition root and AD demonstration | Test-IA.Application, Test-IA.Logging |
+| Test-IA.WebApp | Web Application | net10.0 | ASP.NET Core Razor Pages web interface for AD lookups | Test-IA.Application, Test-IA.Domain, Test-IA.Logging |
 | Test-IA.Tests | Test Project | net10.0 | Unit tests for all projects | Test-IA.Domain, Test-IA.Application, Test-IA.Logging |
 
 ## Public Services
@@ -81,7 +86,7 @@ Retrieves Active Directory group information by `samAccountName`.
 
 ## Dependency Injection
 
-All services are registered via `Microsoft.Extensions.DependencyInjection` in the console application's `Program.cs`:
+All services are registered via `Microsoft.Extensions.DependencyInjection` in both the console application's `Program.cs` and the web application's `Program.cs`:
 
 - `ADDomainDiscoveryService` (Scoped)
 - `IGetADUserInfo` / `GetADUserInfoService` (Scoped)
@@ -107,6 +112,7 @@ Authentication uses **Windows Integrated Authentication** (Negotiate/Kerberos) w
 
 ### Build and Run
 
+**Console Application:**
 ```powershell
 dotnet restore
 dotnet build
@@ -118,6 +124,15 @@ The console application will:
 2. Search for user `MFVA649T`
 3. Search for group `employees of MADRID`
 4. Display results through the logging abstraction
+
+**Web Application:**
+```powershell
+dotnet restore
+dotnet build
+dotnet run --project src/Test-IA.WebApp
+```
+
+The web application will start a Kestrel web server and serve the Razor Pages interface at `https://localhost:5001` (or the configured HTTPS port). Open a browser and navigate to the URL to access the Active Directory lookup interface.
 
 ## Testing
 
@@ -165,7 +180,8 @@ Test-IA/
 │   ├── Test-IA.Domain/          # Interfaces, DTOs, exceptions
 │   ├── Test-IA.Application/     # Service implementations, AD discovery
 │   ├── Test-IA.Logging/         # Logging abstraction
-│   └── Test-IA.ConsoleApp/      # Composition root, Main method
+│   ├── Test-IA.ConsoleApp/      # Composition root, Main method
+│   └── Test-IA.WebApp/          # ASP.NET Core Razor Pages web interface
 ├── tests/
 │   └── Test-IA.Tests/           # xUnit tests
 ├── Test-IA.slnx                  # Solution file
@@ -174,4 +190,4 @@ Test-IA/
 
 ## Last Updated
 
-13/08/2026 14:51
+13/08/2026 16:35

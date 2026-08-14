@@ -41,4 +41,13 @@ public class LoggingService : ILoggerService
 
         _logger.LogError(message, args);
     }
+
+    /// <inheritdoc />
+    public void LogError(Exception exception, string message, params object?[] args)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        ArgumentNullException.ThrowIfNull(message);
+
+        _logger.LogError(exception, message, args);
+    }
 }

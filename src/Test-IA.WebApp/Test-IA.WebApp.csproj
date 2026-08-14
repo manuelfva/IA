@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Test-IA.Application\Test-IA.Application.csproj" />
+    <ProjectReference Include="..\Test-IA.Domain\Test-IA.Domain.csproj" />
+    <ProjectReference Include="..\Test-IA.Logging\Test-IA.Logging.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>TestIA.WebApp</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

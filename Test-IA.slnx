@@ -4,6 +4,7 @@
     <Project Path="src/Test-IA.ConsoleApp/Test-IA.ConsoleApp.csproj" />
     <Project Path="src/Test-IA.Domain/Test-IA.Domain.csproj" />
     <Project Path="src/Test-IA.Logging/Test-IA.Logging.csproj" />
+    <Project Path="src/Test-IA.WebApp/Test-IA.WebApp.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Test-IA.Tests/Test-IA.Tests.csproj" />

@@ -1,0 +1,97 @@
+@page
+@model TestIA.WebApp.Pages.IndexModel
+@{
+    ViewData["Title"] = "Test-IA - Active Directory Lookup";
+}
+
+<div class="container">
+    <h1>Test-IA Active Directory Lookup</h1>
+    <p class="subtitle">Search for users and groups in the Active Directory domain</p>
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-error">
+            <strong>Error:</strong> @Model.Error
+        </div>
+    }
+
+    <form method="post">
+
+        <div class="search-sections">
+            <!-- User Search -->
+            <div class="search-card">
+                <h2>Search User</h2>
+                <div class="form-group">
+                    <label for="UserSearchTerm">samAccountName:</label>
+                    <input type="text" id="UserSearchTerm" name="UserSearchTerm"
+                           value="@Model.UserSearchTerm" placeholder="e.g., MFVA649T" />
+                </div>
+                <button type="submit" name="SearchAction" value="User" class="btn btn-primary">
+                    Search User
+                </button>
+
+                @if (Model.UserResult != null)
+                {
+                    <div class="result-table">
+                        <h3>User Information</h3>
+                        <table>
+                            <tr>
+                                <th>Display Name</th>
+                                <td>@Model.UserResult.DisplayName</td>
+                            </tr>
+                            <tr>
+                                <th>Employee ID</th>
+                                <td>@(Model.UserResult.EmployeeId ?? "(not set)")</td>
+                            </tr>
+                            <tr>
+                                <th>Email</th>
+                                <td>@(Model.UserResult.Mail ?? "(not set)")</td>
+                            </tr>
+                            <tr>
+                                <th>UPN</th>
+                                <td>@(Model.UserResult.UserPrincipalName ?? "(not set)")</td>
+                            </tr>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- Group Search -->
+            <div class="search-card">
+                <h2>Search Group</h2>
+                <div class="form-group">
+                    <label for="GroupSearchTerm">samAccountName:</label>
+                    <input type="text" id="GroupSearchTerm" name="GroupSearchTerm"
+                           value="@Model.GroupSearchTerm" placeholder="e.g., employees of MADRID" />
+                </div>
+                <button type="submit" name="SearchAction" value="Group" class="btn btn-secondary">
+                    Search Group
+                </button>
+
+                @if (Model.GroupResult != null)
+                {
+                    <div class="result-table">
+                        <h3>Group Information</h3>
+                        <table>
+                            <tr>
+                                <th>Display Name</th>
+                                <td>@Model.GroupResult.DisplayName</td>
+                            </tr>
+                            <tr>
+                                <th>Members</th>
+                                <td>
+                                    <ul class="members-list">
+                                        @foreach (var member in Model.GroupResult.Members)
+                                        {
+                                            <li>@member</li>
+                                        }
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </form>
+</div>
