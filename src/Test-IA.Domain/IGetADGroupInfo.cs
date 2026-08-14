@@ -20,5 +20,5 @@ public interface IGetADGroupInfo
 /// Represents a group's information retrieved from Active Directory.
 /// </summary>
 /// <param name="DisplayName">The group's display name.</param>
-/// <param name="Members">The list of member distinguished names in the group.</param>
+/// <param name="Members">The list of member display names in the group.</param>
 public record GroupDto(string DisplayName, string[] Members);

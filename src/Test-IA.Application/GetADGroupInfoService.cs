@@ -52,11 +52,14 @@ public class GetADGroupInfoService : IGetADGroupInfo
 
             var entry = response.Entries[0];
             var displayName = GetAttributeValue(entry, "displayName") ?? "(unknown)";
-            var members = GetMemberValues(entry);
+            var memberDns = GetMemberValues(entry);
+            
+            // Resolve member DNs to display names
+            var memberDisplayNames = ResolveMemberDisplayNamesAsync(memberDns, connection).GetAwaiter().GetResult();
 
-            _logger.LogInformation("Found group: {DisplayName} with {MemberCount} members", displayName, members.Length);
+            _logger.LogInformation("Found group: {DisplayName} with {MemberCount} members", displayName, memberDisplayNames.Length);
 
-            return new GroupDto(displayName, members);
+            return new GroupDto(displayName, memberDisplayNames);
         }
         catch (LdapException ex)
         {
@@ -79,6 +82,56 @@ public class GetADGroupInfoService : IGetADGroupInfo
         }
 
         return (string)attribute[0];
+    }
+
+    private async Task<string[]> ResolveMemberDisplayNamesAsync(string[] memberDns, LdapConnection connection)
+    {
+        var (domainName, domainController, baseDN) = _discoveryService.Discover();
+        var displayNames = new string[memberDns.Length];
+        
+        for (var i = 0; i < memberDns.Length; i++)
+        {
+            var dn = memberDns[i];
+            
+            try
+            {
+                var escapedDn = LdapFilterHelper.Escape(dn);
+                var filter = $"(distinguishedName={escapedDn})";
+                _logger.LogDebug("Resolving display name for member: {DistinguishedName}", dn);
+                
+                var request = new SearchRequest(baseDN, filter, SearchScope.Subtree, "displayName");
+                var response = (SearchResponse)connection.SendRequest(request);
+                
+                if (response.Entries.Count > 0)
+                {
+                    var entry = response.Entries[0];
+                    var displayName = GetAttributeValue(entry, "displayName");
+                    
+                    if (!string.IsNullOrEmpty(displayName))
+                    {
+                        displayNames[i] = displayName;
+                        _logger.LogDebug("Resolved member {DistinguishedName} to display name: {DisplayName}", dn, displayName);
+                    }
+                    else
+                    {
+                        displayNames[i] = dn;
+                        _logger.LogWarning("Member {DistinguishedName} has no displayName attribute. Using DN as fallback.", dn);
+                    }
+                }
+                else
+                {
+                    displayNames[i] = dn;
+                    _logger.LogWarning("Member {DistinguishedName} not found in Active Directory. Using DN as fallback.", dn);
+                }
+            }
+            catch (Exception ex)
+            {
+                displayNames[i] = dn;
+                _logger.LogError(ex, "Error resolving display name for member {DistinguishedName}. Using DN as fallback.", dn);
+            }
+        }
+        
+        return displayNames;
     }
 
     private static string[] GetMemberValues(SearchResultEntry entry)
