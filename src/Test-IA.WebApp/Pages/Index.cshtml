@@ -4,94 +4,125 @@
     ViewData["Title"] = "Test-IA - Active Directory Lookup";
 }
 
-<div class="container">
-    <h1>Test-IA Active Directory Lookup</h1>
-    <p class="subtitle">Search for users and groups in the Active Directory domain</p>
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="/" class="navbar-brand">
+        <span class="brand-icon">AD</span>
+        <span>Test-IA</span>
+    </a>
+    <div class="navbar-links">
+        <span class="navbar-badge">Active Directory</span>
+    </div>
+</nav>
 
+<!-- Hero -->
+<header class="hero">
+    <div class="hero-content">
+        <span class="hero-icon">&#128101;</span>
+        <h1>Active Directory Lookup</h1>
+        <p class="subtitle">Search for users and groups in your Active Directory domain</p>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="main-content">
     @if (!string.IsNullOrEmpty(Model.Error))
     {
         <div class="alert alert-error">
-            <strong>Error:</strong> @Model.Error
+            <span class="alert-icon">&#9888;</span>
+            <div><strong>Error:</strong> @Model.Error</div>
         </div>
     }
 
     <form method="post">
-
-        <div class="search-sections">
-            <!-- User Search -->
+        <div class="search-grid">
+            <!-- User Search Card -->
             <div class="search-card">
-                <h2>Search User</h2>
-                <div class="form-group">
-                    <label for="UserSearchTerm">samAccountName:</label>
-                    <input type="text" id="UserSearchTerm" name="UserSearchTerm"
-                           value="@Model.UserSearchTerm" placeholder="e.g., MFVA649T" />
+                <div class="card-header">
+                    <div class="card-header-icon user">&#128100;</div>
+                    <div>
+                        <h2>Search User</h2>
+                        <p class="card-description">Find user details by samAccountName</p>
+                    </div>
                 </div>
-                <button type="submit" name="SearchAction" value="User" class="btn btn-primary">
-                    Search User
-                </button>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="UserSearchTerm">samAccountName <span class="label-hint">— e.g. MFVA649T</span></label>
+                        <input type="text" id="UserSearchTerm" name="UserSearchTerm"
+                               value="@Model.UserSearchTerm" placeholder="Enter user samAccountName" />
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" name="SearchAction" value="User" class="btn btn-primary">
+                        <span>&#128269;</span> Search User
+                    </button>
+                </div>
 
                 @if (Model.UserResult != null)
                 {
-                    <div class="result-table">
-                        <h3>User Information</h3>
-                        <table>
-                            <tr>
-                                <th>Display Name</th>
-                                <td>@Model.UserResult.DisplayName</td>
-                            </tr>
-                            <tr>
-                                <th>Employee ID</th>
-                                <td>@(Model.UserResult.EmployeeId ?? "(not set)")</td>
-                            </tr>
-                            <tr>
-                                <th>Email</th>
-                                <td>@(Model.UserResult.Mail ?? "(not set)")</td>
-                            </tr>
-                            <tr>
-                                <th>UPN</th>
-                                <td>@(Model.UserResult.UserPrincipalName ?? "(not set)")</td>
-                            </tr>
-                        </table>
+                    <div class="result-section">
+                        <h3>User Information <span class="result-badge">Found</span></h3>
+                        <div class="result-table">
+                            <table>
+                                <tr><th>Display Name</th><td>@Model.UserResult.DisplayName</td></tr>
+                                <tr><th>Employee ID</th><td>@(Model.UserResult.EmployeeId ?? "(not set)")</td></tr>
+                                <tr><th>Email</th><td>@(Model.UserResult.Mail ?? "(not set)")</td></tr>
+                                <tr><th>UPN</th><td>@(Model.UserResult.UserPrincipalName ?? "(not set)")</td></tr>
+                            </table>
+                        </div>
                     </div>
                 }
             </div>
 
-            <!-- Group Search -->
+            <!-- Group Search Card -->
             <div class="search-card">
-                <h2>Search Group</h2>
-                <div class="form-group">
-                    <label for="GroupSearchTerm">samAccountName:</label>
-                    <input type="text" id="GroupSearchTerm" name="GroupSearchTerm"
-                           value="@Model.GroupSearchTerm" placeholder="e.g., employees of MADRID" />
+                <div class="card-header">
+                    <div class="card-header-icon group">&#128101;</div>
+                    <div>
+                        <h2>Search Group</h2>
+                        <p class="card-description">Find group details by samAccountName</p>
+                    </div>
                 </div>
-                <button type="submit" name="SearchAction" value="Group" class="btn btn-secondary">
-                    Search Group
-                </button>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="GroupSearchTerm">samAccountName <span class="label-hint">— e.g. employees of MADRID</span></label>
+                        <input type="text" id="GroupSearchTerm" name="GroupSearchTerm"
+                               value="@Model.GroupSearchTerm" placeholder="Enter group samAccountName" />
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" name="SearchAction" value="Group" class="btn btn-secondary">
+                        <span>&#128269;</span> Search Group
+                    </button>
+                </div>
 
                 @if (Model.GroupResult != null)
                 {
-                    <div class="result-table">
-                        <h3>Group Information</h3>
-                        <table>
-                            <tr>
-                                <th>Display Name</th>
-                                <td>@Model.GroupResult.DisplayName</td>
-                            </tr>
-                            <tr>
-                                <th>Members</th>
-                                <td>
+                    <div class="result-section">
+                        <h3>Group Information <span class="result-badge">Found</span></h3>
+                        <div class="result-table">
+                            <table>
+                                <tr><th>Display Name</th><td>@Model.GroupResult.DisplayName</td></tr>
+                                <tr><th>Members</th><td>
                                     <ul class="members-list">
                                         @foreach (var member in Model.GroupResult.Members)
                                         {
                                             <li>@member</li>
                                         }
                                     </ul>
-                                </td>
-                            </tr>
-                        </table>
+                                </td></tr>
+                            </table>
+                        </div>
                     </div>
                 }
             </div>
         </div>
     </form>
-</div>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+    <span>Test-IA Active Directory Lookup</span>
+    <span class="footer-divider">&middot;</span>
+    <span>Powered by .NET 10 &amp; LDAP</span>
+</footer>
