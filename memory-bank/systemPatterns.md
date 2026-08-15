@@ -69,44 +69,68 @@ The `ILoggerService` interface wraps `Microsoft.Extensions.Logging.ILogger` to p
 
 ## Component Relationships
 
-```
-                    ┌──────────────────┐                    ┌──────────────────┐
-                    │  Program.cs      │                    │  IndexModel      │
-                    │  (ConsoleApp)    │                    │  (WebApp)        │
-                    └────────┬─────────┘                    └────────┬─────────┘
-                             │ uses
-              ┌──────────────┼──────────────┐
-              │              │              │
-              ▼              ▼              ▼
-     ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-     │ ServiceColl. │ │  Logging     │ │  ILogger     │
-     │ Extensions   │ │  Service     │ │  (interface) │
-     └──────┬───────┘ └──────┬───────┘ └──────────────┘
-            │                │
-            │ uses           │ uses
-            ▼                ▼
-     ┌──────────────┐ ┌──────────────┐
-     │  ADDomain    │ │  Logging     │
-     │  Discovery   │ │  Service     │
-     └──────┬───────┘ └──────────────┘
-            │
-            │ uses
-            ▼
-     ┌──────────────┐     ┌──────────────┐
-     │ GetADUser    │     │ GetADGroup   │
-     │  Info Svc    │     │  Info Svc    │
-     └──────┬───────┘     └──────┬───────┘
-            │                     │
-            │ depends on          │ depends on
-            ▼                     ▼
-     ┌──────────────────────────────────────┐
-     │          Test-IA.Domain              │
-     │  IGetADUserInfo, IGetADGroupInfo     │
-     │  UserDto, GroupDto                   │
-     │  DomainException, UserNotFoundEx     │
-     │  GroupNotFoundEx                     │
-     
+```mermaid
+graph TD
+    subgraph Presentation_Layer["Presentation Layer"]
+        console_app["Test-IA.ConsoleApp<br/>Program.cs<br/>Composition Root / DI"]
+        web_app["Test-IA.WebApp<br/>Program.cs<br/>Razor Pages Pipeline"]
+        page_handler["IndexModel<br/>Pages/Index.cshtml.cs<br/>Page Handler"]
+    end
 
+    subgraph Application_Layer["Application Layer"]
+        svc_reg["ServiceCollectionExtensions<br/>DI Registration"]
+        ad_discovery["ADDomainDiscoveryService<br/>Domain / DC / Base DN Discovery"]
+        user_svc["GetADUserInfoService<br/>IGetADUserInfo Impl."]
+        group_svc["GetADGroupInfoService<br/>IGetADGroupInfo Impl."]
+        ldap_helper["LdapFilterHelper<br/>LDAP Filter Escaping"]
+    end
+
+    subgraph Domain_Layer["Domain Layer"]
+        i_user["IGetADUserInfo<br/>User Lookup Contract"]
+        i_group["IGetADGroupInfo<br/>Group Lookup Contract"]
+        user_dto["UserDto<br/>displayName, employeeID, mail, UPN"]
+        group_dto["GroupDto<br/>displayName, members"]
+        domain_ex["DomainException<br/>Base Domain Exception"]
+        user_not_found["UserNotFoundException"]
+        group_not_found["GroupNotFoundException"]
+    end
+
+    subgraph Logging_Layer["Logging Layer"]
+        i_logger["ILoggerService<br/>Logging Interface"]
+        logger_impl["LoggingService<br/>ILogger Implementation"]
+    end
+
+    %% Presentation → Application
+    console_app -->|depends on| svc_reg
+    console_app -->|depends on| user_svc
+    console_app -->|depends on| group_svc
+    console_app -->|depends on| ad_discovery
+    web_app -->|depends on| svc_reg
+    page_handler -->|depends on| user_svc
+    page_handler -->|depends on| group_svc
+
+    %% Presentation → Logging
+    console_app -->|uses| logger_impl
+    web_app -->|uses| logger_impl
+    page_handler -->|uses| i_logger
+
+    %% Application → Domain
+    svc_reg -->|registers| i_user
+    svc_reg -->|registers| i_group
+    user_svc -->|implements| i_user
+    user_svc -->|uses| user_dto
+    user_svc -->|uses| ad_discovery
+    user_svc -->|uses| ldap_helper
+    group_svc -->|implements| i_group
+    group_svc -->|uses| group_dto
+    group_svc -->|uses| ad_discovery
+    group_svc -->|uses| ldap_helper
+    ad_discovery -->|uses| domain_ex
+    user_not_found -->|inherits| domain_ex
+    group_not_found -->|inherits| domain_ex
+
+    %% Logging internal
+    logger_impl -->|implements| i_logger
 ```
 
 ## Critical Implementation Paths

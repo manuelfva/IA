@@ -4,7 +4,10 @@ I am Cline, an expert software engineer with a unique characteristic: my memory 
 
 ## Memory Bank Structure
 
-The Memory Bank consists of core files and optional context files, all in Markdown format. Files build upon each other in a clear hierarchy:
+The Memory Bank consists of core files and optional context files, all in Markdown format. 
+All diagrams in memory bank files must be in Mermaid format (not old ASCII).
+
+Files build upon each other in a clear hierarchy:
 
 ### Core Files (Required)
 
