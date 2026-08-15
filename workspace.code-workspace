@@ -33,13 +33,13 @@
 			"loadOnce": true,
 
 			"requiredFiles": [
-				".cline/rules/solution-memory-bank.md",
-				".cline/rules/solution-architecture.md",
-				".cline/rules/solution-conventions.md",
-				".cline/rules/solution-csharp.md",
-				".cline/rules/solution-readme.md",
-				".cline/rules/solution-requirements.md",
-				".cline/rules/solution-workflow.md"	
+				".clinerules/memory-bank.md",
+				".clinerules/solution-architecture.md",
+				".clinerules/solution-conventions.md",
+				".clinerules/solution-csharp.md",
+				".clinerules/solution-readme.md",
+				".clinerules/solution-requirements.md",
+				".clinerules/solution-workflow.md"	
 			],
 			
 			"searchLimits": {
@@ -60,7 +60,7 @@
 				],
 				"documentation": [
 					"docs",
-					".cline/rules"
+					".clinerules"
 				]
 			},
 
@@ -119,7 +119,7 @@
 					"runtime_success"
 				],
 
-				"readmeTemplate": ".cline/rules/solution-readme.md"
+				"readmeTemplate": ".clinerules/solution-readme.md"
 			}
 		},
 
