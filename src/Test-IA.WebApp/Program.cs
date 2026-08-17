@@ -1,8 +1,12 @@
+using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TestIA;
 using TestIA.Application;
 using TestIA.Domain;
 using TestIA.Logging;
+using TestIA.WebApp;
 
 /// <summary>
 /// Main entry point for the Test-IA Web Application.
@@ -29,6 +33,24 @@ public class Program
         // Register Test-IA AD services
         builder.Services.AddTestIAServices();
 
+        // Register configuration-based services
+        builder.Services.Configure<AuthorizationSettings>(builder.Configuration.GetSection("Authorization"));
+
+        // Register Windows Authentication
+        builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
+            .AddNegotiate();
+
+        // Register authorization with policy
+        builder.Services.AddAuthorization(options =>
+        {
+            var requiredGroup = builder.Configuration.GetValue<string>("Authorization:RequiredGroup") ?? string.Empty;
+            options.AddPolicy("RequiredGroup", policy =>
+                policy.RequireAuthenticatedUser()
+                      .AddRequirements(new GroupAuthorizationRequirement(requiredGroup)));
+        });
+
+        builder.Services.AddSingleton<IAuthorizationHandler, GroupAuthorizationHandler>();
+
         // Register Razor Pages
         builder.Services.AddRazorPages();
 
@@ -43,6 +65,8 @@ public class Program
 
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         app.MapRazorPages();
 

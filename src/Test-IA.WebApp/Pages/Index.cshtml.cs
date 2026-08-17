@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TestIA.Domain;
@@ -8,7 +9,9 @@ namespace TestIA.WebApp.Pages;
 /// <summary>
 /// Page model for the home page. Handles user and group search operations
 /// by delegating to the IGetADUserInfo and IGetADGroupInfo services.
+/// Requires the user to be authenticated and a member of the configured Active Directory group.
 /// </summary>
+[Authorize(Policy = "RequiredGroup")]
 public class IndexModel : PageModel
 {
     private readonly IGetADUserInfo _userInfoService;
