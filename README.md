@@ -171,6 +171,8 @@ dotnet run --project src/Test-IA.WebApp
 
 The web application will start a Kestrel web server and serve the Razor Pages interface at `https://localhost:5001` (or the configured HTTPS port). Open a browser and navigate to the URL to access the Active Directory lookup interface.
 
+**Authorization:** The web application requires Windows Integrated Authentication. Users must be authenticated via Kerberos/NTLM and be a member of the configured authorization group (e.g., "Employees of IT"). Non-authenticated or non-member users receive a 401 Unauthorized response.
+
 ## Testing
 
 **Framework:** xUnit with NSubstitute and FluentAssertions
@@ -211,6 +213,7 @@ dotnet test
 | LDAP Access | System.DirectoryServices.Protocols |
 | AD Discovery | System.DirectoryServices.ActiveDirectory |
 | Windows Auth | System.Security.Principal.WindowsIdentity |
+| Web Auth | Microsoft.AspNetCore.Authentication.Negotiate |
 | Testing | xUnit, NSubstitute, FluentAssertions |
 
 ## Repository Structure
@@ -231,4 +234,4 @@ Test-IA/
 
 ## Last Updated
 
-17/08/2026 11:03
+17/08/2026 13:19
