@@ -20,7 +20,7 @@ A .NET 10.0 solution that demonstrates Active Directory user and group lookup se
 
 ## Overview
 
-**Test-IA** is a .NET 10.0 console application that demonstrates Active Directory (AD DS) user and group information retrieval using real LDAP connections. The solution follows Clean Architecture principles and uses Windows Integrated Authentication (Kerberos/Negotiate) to connect to the domain without requiring explicit credentials.
+**Test-IA** is a .NET 10.0 solution that demonstrates Active Directory (AD DS) user and group information retrieval using real LDAP connections with Windows Integrated Authentication. The solution includes **group-based authorization** that restricts access to users who are members of a configured Active Directory group (e.g., "Employees of IT").
 
 ## Architecture
 
@@ -53,10 +53,10 @@ graph TB
 
 | Layer | Responsibility |
 |---|---|
-| **Domain** | Service interfaces (`IGetADUserInfo`, `IGetADGroupInfo`), DTOs (`UserDto`, `GroupDto`), and domain exceptions |
-| **Application** | Service implementations, Active Directory discovery, LDAP connection management, DI registration |
+| **Domain** | Service interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`), DTOs (`UserDto`, `GroupDto`), and domain exceptions (`DomainException`, `AccessDeniedException`, `MissingGroupException`) |
+| **Application** | Service implementations, Active Directory discovery, LDAP connection management, group authorization logic, DI registration |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
-| **ConsoleApp** | Composition root, service registration, and demonstration of real AD operations |
+| **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations |
 | **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface for AD lookups |
 
 ## Projects
@@ -84,6 +84,14 @@ Retrieves Active Directory group information by `samAccountName`.
 
 **Returns:** `GroupDto` with `DisplayName` and `Members` (array of distinguished names)
 
+### IUserGroupAuthorizationService
+
+Checks whether the current Windows user is a member of a configured Active Directory group for authorization purposes.
+
+**Returns:** `bool` — `true` if the user is a member, `false` otherwise
+
+**Throws:** `MissingGroupException` if the configured authorization group does not exist in Active Directory
+
 ## Dependency Injection
 
 All services are registered via `Microsoft.Extensions.DependencyInjection` in both the console application's `Program.cs` and the web application's `Program.cs`:
@@ -91,11 +99,37 @@ All services are registered via `Microsoft.Extensions.DependencyInjection` in bo
 - `ADDomainDiscoveryService` (Scoped)
 - `IGetADUserInfo` / `GetADUserInfoService` (Scoped)
 - `IGetADGroupInfo` / `GetADGroupInfoService` (Scoped)
+- `IUserGroupAuthorizationService` / `UserGroupAuthorizationService` (Scoped)
 - `ILoggerService` / `LoggingService` (Singleton)
+- `AuthorizationSettings` (bound from `appsettings.json` via `IOptions<T>`)
 
 ## Configuration
 
-No static configuration is required. The application dynamically discovers:
+The application uses `appsettings.json` for configurable settings:
+
+### Logging
+
+```json
+"Logging": {
+  "LogLevel": {
+    "Default": "Information"
+  }
+}
+```
+
+### Authorization
+
+```json
+"Authorization": {
+  "RequiredGroup": "Employees of IT"
+}
+```
+
+- `RequiredGroup`: The Active Directory group samAccountName that users must be a member of to access the application.
+- Configurable per environment via `appsettings.Development.json`, `appsettings.Production.json`, etc.
+- The application validates this setting on startup and fails if it's empty or missing.
+
+No static LDAP configuration is required. The application dynamically discovers:
 
 - Active Directory domain (via `Domain.GetCurrentDomain()`)
 - Domain Controller (via `DirectoryEntry` RootDSE)
@@ -121,9 +155,12 @@ dotnet run --project src/Test-IA.ConsoleApp
 
 The console application will:
 1. Discover the Active Directory environment
-2. Search for user `MFVA649T`
-3. Search for group `employees of MADRID`
-4. Display results through the logging abstraction
+2. Check if the current user is a member of the configured authorization group (e.g., "Employees of IT")
+3. Search for user `MFVA649T`
+4. Search for group `employees of MADRID`
+5. Display results through the logging abstraction
+
+**Authorization:** If the current user is not a member of the configured group, the application logs an error and exits immediately. If the configured group does not exist in Active Directory, the application logs a `MissingGroupException` and exits.
 
 **Web Application:**
 ```powershell
@@ -147,6 +184,8 @@ dotnet test
 - **LoggingServiceTests** (7 tests) - Constructor validation, null message handling, valid message handling
 - **GetADUserInfoServiceTests** (3 tests) - Discovery failure, null/empty samAccountName
 - **GetADGroupInfoServiceTests** (3 tests) - Discovery failure, null/empty samAccountName
+- **MissingGroupExceptionTests** (3 tests) - Exception construction, inheritance from DomainException
+- **UserGroupAuthorizationServiceTests** (9 tests) - Discovery failure, constructor validation, null dependency checks
 
 > Tests pending execution.
 
@@ -167,9 +206,11 @@ dotnet test
 | Framework | .NET 10.0 |
 | Language | C# |
 | DI Container | Microsoft.Extensions.DependencyInjection |
+| Configuration | Microsoft.Extensions.Configuration.Json, Microsoft.Extensions.Options |
 | Logging | Microsoft.Extensions.Logging |
 | LDAP Access | System.DirectoryServices.Protocols |
 | AD Discovery | System.DirectoryServices.ActiveDirectory |
+| Windows Auth | System.Security.Principal.WindowsIdentity |
 | Testing | xUnit, NSubstitute, FluentAssertions |
 
 ## Repository Structure
@@ -190,4 +231,4 @@ Test-IA/
 
 ## Last Updated
 
-13/08/2026 16:35
+17/08/2026 11:03
