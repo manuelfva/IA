@@ -67,6 +67,15 @@ This allows the services to be replaced or mocked in tests.
 
 The `ILoggerService` interface wraps `Microsoft.Extensions.Logging.ILogger` to provide a consistent logging abstraction. This decouples the console app from the specific logging framework and allows for alternative logging implementations.
 
+### 6. Windows Integrated Authentication with Group Authorization
+
+Both ConsoleApp and WebApp require users to be members of a configured Active Directory group to access the application:
+
+- **ConsoleApp**: Authorization check at startup. If the group doesn't exist (`MissingGroupException`) or the user is not a member (`AccessDeniedException`), the application logs an error and exits.
+- **WebApp**: Uses ASP.NET Core Windows Authentication (`AddNegotiate()`) + policy-based authorization (`AddPolicy("RequiredGroup")`). `GroupAuthorizationHandler` uses `IServiceScopeFactory` to resolve scoped `IUserGroupAuthorizationService` within a scope. Non-member users receive 401 Unauthorized.
+- **Configuration**: `Authorization.RequiredGroup` in `appsettings.json` is configurable per environment. Both applications use the same `AuthorizationSettings` class.
+- **Service**: `UserGroupAuthorizationService` checks group membership via LDAP. Throws `MissingGroupException` if group not found, returns `false` if user not found or not a member.
+
 ## Component Relationships
 
 ```mermaid
@@ -167,4 +176,54 @@ graph TD
 - **Record Types**: `UserDto` and `GroupDto` use C# record types for immutable data transfer.
 - **Domain Exception Pattern**: Custom exceptions (`UserNotFoundException`, `GroupNotFoundException`) inheriting from `DomainException` for domain-specific error handling.
 - **Facade Pattern**: `ADDomainDiscoveryService` encapsulates the complexity of domain, DC, and Base DN discovery behind a single `Discover()` method.
-- **Helper/Utility Pattern**: `LdapFilterHelper` is a static utility class for LDAP filter escaping.
+
+### 7. Authorization Flow
+
+Both ConsoleApp and WebApp perform authorization checks before allowing access to AD services:
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as ConsoleApp
+    participant W as WebApp
+    participant A as IUserGroupAuthorizationService
+    participant L as LDAP (AD)
+
+    Note over C,W: Authorization Check
+    
+    C->>A: IsMemberOfGroup(requiredGroup)
+    W->>A: IsMemberOfGroup(requiredGroup)
+    A->>L: Search group by samAccountName
+    alt Group exists
+        L-->>A: Group DN
+        A->>L: Search user DN
+        L-->>A: User DN
+        A->>L: Search group member attribute
+        alt User is member
+            L-->>A: member list contains user DN
+            A-->>C: true
+            A-->>W: true
+            W->>W: context.Succeed(requirement)
+        else User not member
+            L-->>A: member list does not contain user DN
+            A-->>C: false
+            A-->>W: false
+            C->>C: Log error, exit
+            W->>W: context.Fail() (401 Unauthorized)
+        end
+    else Group not found
+        L-->>A: No entries
+        A-->>C: throw MissingGroupException
+        A-->>W: throw MissingGroupException
+        C->>C: Log error, exit
+        W->>W: context.Fail() (401 Unauthorized)
+    end
+```
+
+**ConsoleApp**: Authorization check at startup. If the group doesn't exist (`MissingGroupException`) or the user is not a member (`AccessDeniedException`), the application logs an error and exits.
+
+**WebApp**: Uses ASP.NET Core Windows Authentication (`AddNegotiate()`) + policy-based authorization (`AddPolicy("RequiredGroup")`). `GroupAuthorizationHandler` uses `IServiceScopeFactory` to resolve scoped `IUserGroupAuthorizationService` within a scope. Non-member users receive 401 Unauthorized.
+
+**Configuration**: `Authorization.RequiredGroup` in `appsettings.json` is configurable per environment. Both applications use the same `AuthorizationSettings` class.
+
+**Service**: `UserGroupAuthorizationService` checks group membership via LDAP. Throws `MissingGroupException` if group not found, returns `false` if user not found or not a member.

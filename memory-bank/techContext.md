@@ -52,7 +52,7 @@ dotnet run --project src/Test-IA.ConsoleApp/Test-IA.ConsoleApp.csproj
 | Test-IA.Application | Test-IA.Domain, Microsoft.Extensions.DependencyInjection.Abstractions, Microsoft.Extensions.Logging.Abstractions, System.DirectoryServices, System.DirectoryServices.Protocols |
 | Test-IA.Logging | Microsoft.Extensions.Logging.Abstractions |
 | Test-IA.ConsoleApp | Test-IA.Application, Test-IA.Logging, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Logging.Console, Microsoft.Extensions.Configuration.Json |
-| Test-IA.WebApp | Test-IA.Application, Test-IA.Logging, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting |
+| Test-IA.WebApp | Test-IA.Application, Test-IA.Logging, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, Microsoft.AspNetCore.Authentication.Negotiate |
 | Test-IA.Tests | Test-IA.Domain, Test-IA.Application, Test-IA.Logging, xUnit, NSubstitute, FluentAssertions |
 
 ## NuGet Packages (Version 10.0.11 unless noted)
@@ -62,6 +62,7 @@ dotnet run --project src/Test-IA.ConsoleApp/Test-IA.ConsoleApp.csproj
 - `Microsoft.Extensions.Logging.Abstractions` 10.0.11
 - `Microsoft.Extensions.DependencyInjection` 10.0.11
 - `Microsoft.Extensions.Logging.Console` 10.0.11
+- `Microsoft.AspNetCore.Authentication.Negotiate` 10.0.11
 - `System.DirectoryServices` 10.0.11
 - `System.DirectoryServices.Protocols` 10.0.11
 - `xunit` 2.9.3
@@ -82,6 +83,8 @@ dotnet run --project src/Test-IA.ConsoleApp/Test-IA.ConsoleApp.csproj
 - **No static AD configuration**: Domain, DC, Base DN, credentials must never be hard-coded.
 - **No fallback on discovery failure**: Must fail clearly with descriptive error.
 - **XML Documentation**: All public members must have `///` comments.
+- **Authorization group**: Configurable via `appsettings.json` (`Authorization.RequiredGroup`). Both ConsoleApp and WebApp use the same `AuthorizationSettings` class.
+- **WebApp Windows Auth**: Uses `AddNegotiate()` for Kerberos/NTLM. `GroupAuthorizationHandler` uses `IServiceScopeFactory` to resolve scoped services within a scope.
 
 ## LDAP-Specific Technical Details
 

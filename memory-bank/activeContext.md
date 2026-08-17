@@ -20,13 +20,21 @@ The project has been created with all core services implemented and a WebApp pre
 - **UI redesign #2 (Glassmorphism + Aurora)**: Complete visual overhaul — dark theme (`#0a0a1a`), animated aurora background (4 floating gradient orbs), frosted glass components (`backdrop-filter: blur(20px)`), gradient text, luminous buttons.
 - **Implemented member DN to display name resolution**: `GetADGroupInfoService` now resolves each group member's Distinguished Name to its `displayName` attribute by performing additional LDAP searches. Falls back to DN if resolution fails (logged as warning).
 - **Fixed member resolution bug**: Changed `SearchScope.Base` to `SearchScope.Subtree` in `ResolveMemberDisplayNamesAsync` — `SearchScope.Base` only searches the base DN object itself, not the entire directory, so member objects could never be found.
+- **Implemented Windows Integrated Authentication with group-based authorization**: Both ConsoleApp and WebApp now require users to be members of a configured Active Directory group to access the application. Group name is configurable via `appsettings.json` (`Authorization.RequiredGroup`).
+- **Added `MissingGroupException`**: Domain exception thrown when the configured authorization group does not exist in Active Directory.
+- **Added `UserGroupAuthorizationService`**: Checks if the current Windows user is a member of the configured AD group via LDAP. Throws `MissingGroupException` if group not found, returns `false` if user not found or not a member.
+- **Added `AuthorizationSettings`**: Strongly-typed configuration class bound to `Authorization` section in `appsettings.json`.
+- **ConsoleApp authorization**: Fails fast with clear error messages — `MissingGroupException` (group not found), `AccessDeniedException` (user not member), or `DomainException` (LDAP error).
+- **WebApp authorization**: Uses ASP.NET Core Windows Authentication (`AddNegotiate()`) + policy-based authorization (`AddPolicy("RequiredGroup")`). `GroupAuthorizationHandler` uses `IServiceScopeFactory` to resolve scoped `IUserGroupAuthorizationService` within a scope. Non-member users receive 401 Unauthorized.
+- **Added unit tests**: `MissingGroupExceptionTests` (3 tests) and `UserGroupAuthorizationServiceTests` (9 tests) — total 22 tests passing.
 
 ## Next Steps
 
 1. **Validate build**: Run `dotnet build` to verify all projects compile.
 2. **Run tests**: Execute `dotnet test` to confirm unit tests pass.
-3. **Run console app**: Execute on a domain-joined Windows machine to validate real AD DS connectivity.
-4. **Generate README**: Only after successful validation.
+3. **Run console app**: Execute on a domain-joined Windows machine to validate real AD DS connectivity and group authorization.
+4. **Run WebApp**: Execute on a domain-joined Windows machine to validate Windows Authentication and group-based authorization.
+5. **Generate README**: Only after successful validation.
 
 ## Active Decisions and Considerations
 
@@ -37,6 +45,9 @@ The project has been created with all core services implemented and a WebApp pre
 - **WebApp launch settings**: `launchSettings.json` defines both HTTP (`http://localhost:5000`) and HTTPS (`https://localhost:5001`) URLs. HTTPS redirect is disabled in Development mode to allow POST requests to reach `OnPost()` handlers.
 - **WebApp model binding**: The `SearchAction` hidden input (`name="SearchAction"`) binds to the `SearchAction` property on `IndexModel` to determine which service to call.
 - **WebApp CSS**: `wwwroot/css/site.css` uses CSS custom properties, `backdrop-filter: blur()`, and `@keyframes` for the aurora animation. All components use glassmorphism styling.
+- **ConsoleApp authorization**: Group name is read from `appsettings.json` via `IOptions<AuthorizationSettings>`. Authorization check happens at startup — if the group doesn't exist or the user is not a member, the application logs an error and exits.
+- **WebApp authorization**: Uses ASP.NET Core Windows Authentication (`AddNegotiate()`) + policy-based authorization (`AddPolicy("RequiredGroup")`). `GroupAuthorizationHandler` uses `IServiceScopeFactory` to resolve scoped `IUserGroupAuthorizationService` within a scope — required because `AuthorizationHandler<T>` is registered as Singleton.
+- **Authorization settings**: `Authorization.RequiredGroup` in `appsettings.json` is configurable per environment. Both ConsoleApp and WebApp use the same `AuthorizationSettings` class.
 
 ## Important Patterns and Preferences
 
@@ -46,6 +57,7 @@ The project has been created with all core services implemented and a WebApp pre
 - **Service registration**: Done via `ServiceCollectionExtensions.AddTestIAServices()` extension method in the Application project.
 - **Testing pattern**: `ThrowingADDomainDiscoveryService` extends `ADDomainDiscoveryService` and overrides `Discover()` to throw controlled exceptions. This avoids the need for mocking the discovery service entirely.
 - **WebApp pattern**: Razor Pages with `IndexModel` class in `Pages/Index.cshtml.cs`. Form submission uses POST with hidden `SearchAction` field to trigger the correct service call.
+- **Authorization pattern**: `IUserGroupAuthorizationService` interface in Domain layer, `UserGroupAuthorizationService` implementation in Application layer. Both ConsoleApp and WebApp reuse the same service. ConsoleApp fails fast on authorization failure; WebApp uses ASP.NET Core policy-based authorization.
 
 ## Known Issues
 

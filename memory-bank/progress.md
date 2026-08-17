@@ -2,7 +2,7 @@
 
 ## What Works
 
-- **Domain layer**: All interfaces (`IGetADUserInfo`, `IGetADGroupInfo`), DTOs (`UserDto`, `GroupDto`), and domain exceptions (`DomainException`, `UserNotFoundException`, `GroupNotFoundException`) are implemented with XML documentation.
+- **Domain layer**: All interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`), DTOs (`UserDto`, `GroupDto`), and domain exceptions (`DomainException`, `UserNotFoundException`, `GroupNotFoundException`, `AccessDeniedException`, `MissingGroupException`) are implemented with XML documentation.
 - **Application layer**: 
   - `ADDomainDiscoveryService` — dynamic domain, DC, and Base DN discovery.
   - `GetADUserInfoService` — LDAP user search with safe filter escaping.
@@ -10,12 +10,12 @@
   - `ResolveMemberDisplayNamesAsync` — resolves each group member's Distinguished Name to its `displayName` attribute via LDAP searches.
   - `LdapFilterHelper` — LDAP special character escaping utility.
   - `ServiceCollectionExtensions` — DI registration extension method.
-- **Logging layer**: `ILoggerService` interface and `LoggingService` implementation with XML documentation. Added `LogError(Exception, string, params object?[])` overload.
+  - `UserGroupAuthorizationService` — checks if current Windows user is member of configured AD group via LDAP. Throws `MissingGroupException` if group not found.
+  - `AuthorizationSettings` — strongly-typed configuration class bound to `Authorization` section in `appsettings.json`.
+  - `ILoggerService` interface and `LoggingService` implementation with XML documentation. Added `LogError(Exception, string, params object?[])` overload.
 - **ConsoleApp logging**: `appsettings.json` and `appsettings.Development.json` with structured logging configuration via `Microsoft.Extensions.Configuration.Json`. Log levels configurable at default and per-namespace level.
+- **ConsoleApp authorization**: Configurable group name via `appsettings.json` (`Authorization.RequiredGroup`). Fails fast with clear error messages — `MissingGroupException` (group not found), `AccessDeniedException` (user not member), or `DomainException` (LDAP error).
 - **ConsoleApp**: `Program.cs` with full DI setup, real service execution, structured output via `ILoggerService`.
-- **Tests**: Unit tests for both services and logging project using xUnit, NSubstitute, and FluentAssertions.
-- **Project files**: All `.csproj` files correctly configured with proper references and packages.
-- **Solution file**: `Test-IA.slnx` has been regenerated and includes all 6 projects (4 source + 1 test + 1 WebApp).
 - **WebApp**: ASP.NET Core Razor Pages application with:
   - `IndexModel` page model with `OnPost()` handling both user and group searches.
   - `launchSettings.json` with HTTP/HTTPS URLs.
@@ -23,6 +23,12 @@
   - `ILoggerService` injected into `IndexModel` for error logging.
   - **Glassmorphism + Aurora UI**: Dark theme, animated aurora background, frosted glass components, gradient text, luminous buttons.
   - CSS custom properties, `backdrop-filter: blur()`, `@keyframes` animations.
+  - **Windows Authentication**: `AddNegotiate()` for Kerberos/NTLM.
+  - **Policy-based authorization**: `AddPolicy("RequiredGroup")` with `GroupAuthorizationHandler` using `IServiceScopeFactory` for scoped service resolution.
+  - `[Authorize(Policy = "RequiredGroup")]` applied to Index page.
+- **Tests**: Unit tests for both services and logging project using xUnit, NSubstitute, and FluentAssertions. Total 22 tests passing.
+- **Project files**: All `.csproj` files correctly configured with proper references and packages.
+- **Solution file**: `Test-IA.slnx` has been regenerated and includes all 6 projects (4 source + 1 test + 1 WebApp).
 
 ## What's Left to Build
 
