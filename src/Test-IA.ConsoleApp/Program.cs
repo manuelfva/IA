@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TestIA;
@@ -18,10 +19,22 @@ public class Program
     /// <param name="args">Command-line arguments (not used).</param>
     public static void Main(string[] args)
     {
+        // Load configuration from appsettings.json and appsettings.Development.json
+        var basePath = Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? Directory.GetCurrentDirectory();
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(basePath)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
+            .Build();
+
         var services = new ServiceCollection();
 
-        // Create logger factory
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+        // Create logger factory using configuration and console output
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConfiguration(configuration.GetSection("Logging"));
+            builder.AddConsole();
+        });
 
         // Register logging
         services.AddSingleton<ILoggerService>(sp => new LoggingService(loggerFactory.CreateLogger<LoggingService>()));

@@ -51,12 +51,13 @@ dotnet run --project src/Test-IA.ConsoleApp/Test-IA.ConsoleApp.csproj
 | Test-IA.Domain | None |
 | Test-IA.Application | Test-IA.Domain, Microsoft.Extensions.DependencyInjection.Abstractions, Microsoft.Extensions.Logging.Abstractions, System.DirectoryServices, System.DirectoryServices.Protocols |
 | Test-IA.Logging | Microsoft.Extensions.Logging.Abstractions |
-| Test-IA.ConsoleApp | Test-IA.Application, Test-IA.Logging, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Logging.Console |
+| Test-IA.ConsoleApp | Test-IA.Application, Test-IA.Logging, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Logging.Console, Microsoft.Extensions.Configuration.Json |
 | Test-IA.WebApp | Test-IA.Application, Test-IA.Logging, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting |
 | Test-IA.Tests | Test-IA.Domain, Test-IA.Application, Test-IA.Logging, xUnit, NSubstitute, FluentAssertions |
 
 ## NuGet Packages (Version 10.0.11 unless noted)
 
+- `Microsoft.Extensions.Configuration.Json` 10.0.11
 - `Microsoft.Extensions.DependencyInjection.Abstractions` 10.0.11
 - `Microsoft.Extensions.Logging.Abstractions` 10.0.11
 - `Microsoft.Extensions.DependencyInjection` 10.0.11
@@ -77,6 +78,7 @@ dotnet run --project src/Test-IA.ConsoleApp/Test-IA.ConsoleApp.csproj
 - **Implicit Usings**: Enabled in all projects.
 - **File-scoped namespaces**: Used throughout.
 - **No `Console.WriteLine`**: All output via `ILoggerService`.
+- **ConsoleApp logging levels**: Configured via `appsettings.json` (not hardcoded).
 - **No static AD configuration**: Domain, DC, Base DN, credentials must never be hard-coded.
 - **No fallback on discovery failure**: Must fail clearly with descriptive error.
 - **XML Documentation**: All public members must have `///` comments.

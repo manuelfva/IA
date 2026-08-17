@@ -11,6 +11,7 @@
   - `LdapFilterHelper` — LDAP special character escaping utility.
   - `ServiceCollectionExtensions` — DI registration extension method.
 - **Logging layer**: `ILoggerService` interface and `LoggingService` implementation with XML documentation. Added `LogError(Exception, string, params object?[])` overload.
+- **ConsoleApp logging**: `appsettings.json` and `appsettings.Development.json` with structured logging configuration via `Microsoft.Extensions.Configuration.Json`. Log levels configurable at default and per-namespace level.
 - **ConsoleApp**: `Program.cs` with full DI setup, real service execution, structured output via `ILoggerService`.
 - **Tests**: Unit tests for both services and logging project using xUnit, NSubstitute, and FluentAssertions.
 - **Project files**: All `.csproj` files correctly configured with proper references and packages.
@@ -27,8 +28,7 @@
 
 1. **Validate build**: Run `dotnet build` to confirm compilation succeeds.
 2. **Run tests**: Execute `dotnet test` to confirm all unit tests pass.
-3. **Runtime validation**: Run the console app on a domain-joined Windows machine to verify real AD DS connectivity.
-4. **Generate README**: Only after successful build and test validation.
+3. **Generate README**: Only after successful build and test validation.
 
 ## Current Status
 

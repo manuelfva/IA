@@ -12,6 +12,7 @@ The project has been created with all core services implemented and a WebApp pre
 - Memory bank files being created for the first time.
 - **Fixed `Test-IA.slnx`**: Regenerated to include all 4 source projects and 1 test project.
 - **Created `Test-IA.WebApp`**: ASP.NET Core Razor Pages web application exposing the same AD lookup services via a web UI.
+- **Added appsettings.json to ConsoleApp**: Configured `Test-IA.ConsoleApp` with `appsettings.json` and `appsettings.Development.json` for logging level configuration, matching the `Test-IA.WebApp` pattern. Added `Microsoft.Extensions.Configuration.Json` package. Updated `Program.cs` to load configuration via `ConfigurationBuilder` using assembly location for robust path resolution.
 - **Fixed WebApp bug #1**: HTTPS redirect middleware was blocking POST requests — added `launchSettings.json` and made `UseHttpsRedirection()` conditional on non-Development environment.
 - **Fixed WebApp bug #2**: Model binding mismatch — `CurrentAction` property was never populated because the hidden input sent `SearchAction` — renamed property to `SearchAction` to match form field name.
 - **Added error logging**: Injected `ILoggerService` into `IndexModel` and added `LogError(Exception, string, params object?[])` overload to the logging abstraction.
@@ -32,7 +33,7 @@ The project has been created with all core services implemented and a WebApp pre
 - The `ADDomainDiscoveryService` uses `virtual` on the `Discover()` method to allow test overrides without requiring an interface. This is a deliberate design choice to keep the test setup simple.
 - The `LdapFilterHelper` is `internal static` since it's only used within the Application layer. It manually escapes LDAP special characters instead of relying on `SearchFilter.Escape` for full control.
 - `ILogger<T>` is registered as `Singleton` in the console app's composition root because `LoggerFactory.Create()` produces a singleton logger factory.
-- No `appsettings.json` is used because the application relies entirely on dynamic discovery -- there are no configuration values to externalize.
+- ConsoleApp now uses `appsettings.json` for logging level configuration. The `ConfigurationBuilder` uses `Path.GetDirectoryName(typeof(Program).Assembly.Location)` for robust path resolution regardless of the current working directory. `appsettings.Development.json` is optional and overrides production settings.
 - **WebApp launch settings**: `launchSettings.json` defines both HTTP (`http://localhost:5000`) and HTTPS (`https://localhost:5001`) URLs. HTTPS redirect is disabled in Development mode to allow POST requests to reach `OnPost()` handlers.
 - **WebApp model binding**: The `SearchAction` hidden input (`name="SearchAction"`) binds to the `SearchAction` property on `IndexModel` to determine which service to call.
 - **WebApp CSS**: `wwwroot/css/site.css` uses CSS custom properties, `backdrop-filter: blur()`, and `@keyframes` for the aurora animation. All components use glassmorphism styling.
