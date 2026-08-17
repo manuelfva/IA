@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TestIA;
 using TestIA.Application;
 using TestIA.Domain;
@@ -40,11 +41,15 @@ public class Program
         services.AddSingleton<ILoggerService>(sp => new LoggingService(loggerFactory.CreateLogger<LoggingService>()));
         services.AddTestIAServices();
 
+        // Register configuration-based services
+        services.Configure<AuthorizationSettings>(configuration.GetSection("Authorization"));
+
         // Register ILogger<T> for all services that need it
         services.AddSingleton<ILogger<LoggingService>>(_ => loggerFactory.CreateLogger<LoggingService>());
         services.AddSingleton<ILogger<GetADUserInfoService>>(_ => loggerFactory.CreateLogger<GetADUserInfoService>());
         services.AddSingleton<ILogger<GetADGroupInfoService>>(_ => loggerFactory.CreateLogger<GetADGroupInfoService>());
         services.AddSingleton<ILogger<ADDomainDiscoveryService>>(_ => loggerFactory.CreateLogger<ADDomainDiscoveryService>());
+        services.AddSingleton<ILogger<UserGroupAuthorizationService>>(_ => loggerFactory.CreateLogger<UserGroupAuthorizationService>());
 
         // Build the service provider
         using var serviceProvider = services.BuildServiceProvider();
@@ -52,6 +57,44 @@ public class Program
         var loggerService = serviceProvider.GetRequiredService<ILoggerService>();
         var userInfoService = serviceProvider.GetRequiredService<IGetADUserInfo>();
         var groupInfoService = serviceProvider.GetRequiredService<IGetADGroupInfo>();
+        var authorizationService = serviceProvider.GetRequiredService<IUserGroupAuthorizationService>();
+        var authorizationSettings = serviceProvider.GetRequiredService<IOptions<AuthorizationSettings>>();
+
+        // Check authorization before proceeding
+        var requiredGroup = authorizationSettings.Value.RequiredGroup;
+        if (string.IsNullOrWhiteSpace(requiredGroup))
+        {
+            loggerService.LogError("Authorization configuration is missing: 'Authorization:RequiredGroup' is not set in appsettings.json.");
+            return;
+        }
+
+        try
+        {
+            // Check if the current user is a member of the group
+            // (VerifyGroupExists is called internally and throws MissingGroupException if group is not found)
+            if (!authorizationService.IsMemberOfGroup(requiredGroup))
+            {
+                loggerService.LogError("Access denied: Current user is not a member of the '{GroupName}' group. Application will exit.", requiredGroup);
+                return;
+            }
+
+            loggerService.LogInformation("Authorization successful: Current user is a member of the '{GroupName}' group.", requiredGroup);
+        }
+        catch (MissingGroupException ex)
+        {
+            loggerService.LogError(ex, "Authorization group missing: {Message}", ex.Message);
+            return;
+        }
+        catch (AccessDeniedException ex)
+        {
+            loggerService.LogError(ex, "Authorization check failed: {Message}", ex.Message);
+            return;
+        }
+        catch (DomainException ex)
+        {
+            loggerService.LogError(ex, "Error during authorization check: {Message}", ex.Message);
+            return;
+        }
 
         loggerService.LogInformation("=== Test-IA Console Application ===");
         loggerService.LogInformation("Starting Active Directory service demonstration...");

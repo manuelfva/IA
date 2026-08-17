@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using TestIA.Application;
 using TestIA.Domain;
 
@@ -19,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ADDomainDiscoveryService>();
         services.AddScoped<IGetADUserInfo, GetADUserInfoService>();
         services.AddScoped<IGetADGroupInfo, GetADGroupInfoService>();
+        services.AddScoped<IUserGroupAuthorizationService, UserGroupAuthorizationService>();
 
         return services;
     }
