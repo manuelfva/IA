@@ -5,11 +5,14 @@
 - **Domain layer**: All interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`), DTOs (`UserDto`, `GroupDto`), and domain exceptions (`DomainException`, `UserNotFoundException`, `GroupNotFoundException`, `AccessDeniedException`, `MissingGroupException`) are implemented with XML documentation.
 - **Application layer**: 
   - `ADDomainDiscoveryService` — dynamic domain, DC, and Base DN discovery.
-  - `GetADUserInfoService` — LDAP user search with safe filter escaping.
-  - `GetADGroupInfoService` — LDAP group search with safe filter escaping.
+  - `IAttributeMapper<TDto>` — generic interface for LDAP-to-DTO mapping (Application layer).
+  - `UserAttributeMapper` — implements `IAttributeMapper<UserDto>`, maps 4 LDAP attributes.
+  - `GroupAttributeMapper` — implements `IAttributeMapper<GroupDto>`, maps `displayName` + `member` DN array.
+  - `GetADUserInfoService` — LDAP user search with safe filter escaping, uses `IAttributeMapper<UserDto>`.
+  - `GetADGroupInfoService` — LDAP group search with safe filter escaping, uses `IAttributeMapper<GroupDto>`.
   - `ResolveMemberDisplayNamesAsync` — resolves each group member's Distinguished Name to its `displayName` attribute via LDAP searches.
   - `LdapFilterHelper` — LDAP special character escaping utility.
-  - `ServiceCollectionExtensions` — DI registration extension method.
+  - `ServiceCollectionExtensions` — DI registration extension method (includes mapper registrations).
   - `UserGroupAuthorizationService` — checks if current Windows user is member of configured AD group via LDAP. Throws `MissingGroupException` if group not found.
   - `AuthorizationSettings` — strongly-typed configuration class bound to `Authorization` section in `appsettings.json`.
   - `ILoggerService` interface and `LoggingService` implementation with XML documentation. Added `LogError(Exception, string, params object?[])` overload.
@@ -26,21 +29,20 @@
   - **Windows Authentication**: `AddNegotiate()` for Kerberos/NTLM.
   - **Policy-based authorization**: `AddPolicy("RequiredGroup")` with `GroupAuthorizationHandler` using `IServiceScopeFactory` for scoped service resolution.
   - `[Authorize(Policy = "RequiredGroup")]` applied to Index page.
-- **Tests**: Unit tests for both services and logging project using xUnit, NSubstitute, and FluentAssertions. Total 22 tests passing.
+- **Tests**: Unit tests for both services and logging project using xUnit, NSubstitute, and FluentAssertions. Total 22 tests passing. Test constructors updated to inject mappers.
 - **Project files**: All `.csproj` files correctly configured with proper references and packages.
 - **Solution file**: `Test-IA.slnx` has been regenerated and includes all 6 projects (4 source + 1 test + 1 WebApp).
 
 ## What's Left to Build
 
-1. **Validate build**: Run `dotnet build` to confirm compilation succeeds.
-2. **Run tests**: Execute `dotnet test` to confirm all unit tests pass.
-3. **Generate README**: Only after successful build and test validation.
+1. **Generate README**: After successful build and test validation, generate a professional README.md following `.cline/rules/solution-readme.md`.
+2. **Generate `.gitignore`**: Create a comprehensive `.gitignore` file for the solution root following `.cline/rules/solution-workflow.md` Step 10.
 
 ## Current Status
 
-**Phase**: Initial implementation complete. Validation pending.
+**Phase**: Implementation complete. All validations passed. Ready for documentation generation.
 
-The codebase is complete with both ConsoleApp and WebApp presentation layers. Ready for validation.
+The codebase is complete with both ConsoleApp and WebApp presentation layers, Attribute Mapper refactoring, and comprehensive documentation. All 22 tests pass.
 
 ## Known Issues
 
@@ -58,3 +60,4 @@ The codebase is complete with both ConsoleApp and WebApp presentation layers. Re
 - **Decision**: WebApp uses Razor Pages (not MVC Controllers) for a simpler presentation layer.
 - **Decision**: WebApp HTTPS redirect is disabled in Development mode to allow POST requests to reach page handlers.
 - **Decision**: WebApp UI uses Glassmorphism + Aurora design — dark theme with animated aurora background and frosted glass components.
+- **Decision**: Attribute Mapper refactoring — replaced static `_attributeNames` dictionaries with a generic `IAttributeMapper<TDto>` interface. The interface lives in the Application layer (not Domain) because it depends on `SearchResultEntry` from `System.DirectoryServices.Protocols`. This keeps the Domain layer free of Infrastructure dependencies while providing a reusable, testable mapping pattern for future DTOs.

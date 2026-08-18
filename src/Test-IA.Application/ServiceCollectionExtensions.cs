@@ -26,6 +26,8 @@ public static class ServiceCollectionExtensions
     /// This method adds the following services to the container:
     /// <list type="bullet">
     ///   <item><description><see cref="ADDomainDiscoveryService"/> — Dynamic AD environment discovery.</description></item>
+    ///   <item><description><see cref="IAttributeMapper&lt;UserDto&gt;"/> / <see cref="UserAttributeMapper"/> — User attribute mapping.</description></item>
+    ///   <item><description><see cref="IAttributeMapper&lt;GroupDto&gt;"/> / <see cref="GroupAttributeMapper"/> — Group attribute mapping.</description></item>
     ///   <item><description><see cref="Domain.IGetADUserInfo"/> / <see cref="GetADUserInfoService"/> — User lookup service.</description></item>
     ///   <item><description><see cref="Domain.IGetADGroupInfo"/> / <see cref="GetADGroupInfoService"/> — Group lookup service.</description></item>
     ///   <item><description><see cref="Domain.IUserGroupAuthorizationService"/> / <see cref="UserGroupAuthorizationService"/> — Group membership authorization.</description></item>
@@ -47,6 +49,12 @@ public static class ServiceCollectionExtensions
         // Register the AD discovery service as scoped.
         // Each scope gets its own discovery instance.
         services.AddScoped<ADDomainDiscoveryService>();
+
+        // Register the user attribute mapper, mapped to its interface.
+        services.AddScoped<IAttributeMapper<UserDto>, UserAttributeMapper>();
+
+        // Register the group attribute mapper, mapped to its interface.
+        services.AddScoped<IAttributeMapper<GroupDto>, GroupAttributeMapper>();
 
         // Register the user lookup service, mapped to its interface.
         services.AddScoped<IGetADUserInfo, GetADUserInfoService>();

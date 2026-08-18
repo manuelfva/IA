@@ -35,22 +35,14 @@ namespace TestIA.Application;
 public class GetADGroupInfoService : IGetADGroupInfo
 {
     /// <summary>
-    /// Maps LDAP attribute names to their human-readable display labels.
-    /// <para>
-    /// This dictionary defines the attributes that will be requested from Active Directory
-    /// during the group search. Only the <c>displayName</c> is fetched here; the <c>member</c>
-    /// attribute is added separately because it requires special handling.
-    /// </para>
-    /// </summary>
-    private static readonly Dictionary<string, string> _attributeNames = new()
-    {
-        { "displayName", "Display Name" },
-    };
-
-    /// <summary>
     /// Service responsible for dynamically discovering the Active Directory environment.
     /// </summary>
     private readonly ADDomainDiscoveryService _discoveryService;
+
+    /// <summary>
+    /// Mapper for converting LDAP search result entries to <see cref="GroupDto"/> instances.
+    /// </summary>
+    private readonly IAttributeMapper<GroupDto> _groupMapper;
 
     /// <summary>
     /// Logger for structured application events (searches, errors, results).
@@ -64,15 +56,25 @@ public class GetADGroupInfoService : IGetADGroupInfo
     /// The Active Directory discovery service used to locate the domain, Domain Controller,
     /// and LDAP Base DN dynamically at runtime. Must not be null.
     /// </param>
+    /// <param name="groupMapper">
+    /// The mapper used to convert LDAP search result entries to <see cref="GroupDto"/> instances.
+    /// Must not be null.
+    /// </param>
     /// <param name="logger">
     /// The logger instance used for structured logging of group operations.
     /// Must not be null.
     /// </param>
-    public GetADGroupInfoService(ADDomainDiscoveryService discoveryService, ILogger<GetADGroupInfoService> logger)
+    public GetADGroupInfoService(
+        ADDomainDiscoveryService discoveryService,
+        IAttributeMapper<GroupDto> groupMapper,
+        ILogger<GetADGroupInfoService> logger)
     {
         _discoveryService = discoveryService ?? throw new ArgumentNullException(nameof(discoveryService));
+        _groupMapper = groupMapper ?? throw new ArgumentNullException(nameof(groupMapper));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
+    /// <inheritdoc />
 
     /// <inheritdoc />
     /// <summary>
@@ -121,9 +123,9 @@ public class GetADGroupInfoService : IGetADGroupInfo
             var filter = $"(&(objectCategory=group)(sAMAccountName={escapedSamAccountName}))";
             _logger.LogInformation("Executing LDAP search with filter: {Filter}", filter);
 
-            // Request both displayName and member attributes.
-            // displayName comes from _attributeNames; member is added separately.
-            var allAttributes = _attributeNames.Keys.Concat(new[] { "member" }).ToArray();
+            // Request both displayName (from mapper) and member attributes.
+            // displayName comes from the mapper's Attributes; member is added separately.
+            var allAttributes = _groupMapper.Attributes.Keys.Concat(new[] { "member" }).ToArray();
 
             // Create a subtree search that looks for the group anywhere under the Base DN.
             var request = new SearchRequest(baseDN, filter, SearchScope.Subtree, allAttributes);
@@ -136,23 +138,22 @@ public class GetADGroupInfoService : IGetADGroupInfo
                 throw new GroupNotFoundException($"Group with samAccountName '{samAccountName}' not found in Active Directory.");
             }
 
-            // Extract the requested attributes from the first (and expected only) matching entry.
+            // Extract the first (and expected only) matching entry.
             var entry = response.Entries[0];
-            var attributes = entry.ExtractAttributes(_attributeNames);
-            var displayName = attributes["displayName"] ?? "(unknown)";
 
-            // Extract the raw member Distinguished Names from the entry.
-            var memberDns = GetMemberValues(entry);
+            // Use the mapper to convert the LDAP entry to a GroupDto.
+            // The mapper handles displayName extraction and member DN extraction.
+            var groupDto = _groupMapper.Map(entry);
 
             // Resolve each member's Distinguished Name to its display name.
             // This performs additional LDAP searches — one per member.
-            var memberDisplayNames = ResolveMemberDisplayNamesAsync(memberDns, connection).GetAwaiter().GetResult();
+            var memberDisplayNames = ResolveMemberDisplayNamesAsync(groupDto.Members, connection).GetAwaiter().GetResult();
 
             // Log the successful lookup with structured output for auditability.
-            _logger.LogInformation("Found group: {DisplayName} with {MemberCount} members", displayName, memberDisplayNames.Length);
+            _logger.LogInformation("Found group: {DisplayName} with {MemberCount} members", groupDto.DisplayName, memberDisplayNames.Length);
 
-            // Return the strongly-typed DTO record to the caller.
-            return new GroupDto(displayName, memberDisplayNames);
+            // Return a new GroupDto with resolved member display names.
+            return new GroupDto(groupDto.DisplayName, memberDisplayNames);
         }
         catch (LdapException ex)
         {

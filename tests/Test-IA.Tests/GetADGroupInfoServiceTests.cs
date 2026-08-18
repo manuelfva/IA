@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using TestIA.Application;
@@ -12,6 +12,15 @@ namespace TestIA.Tests;
 public class GetADGroupInfoServiceTests
 {
     /// <summary>
+    /// Creates a mock group attribute mapper for tests.
+    /// </summary>
+    private static IAttributeMapper<GroupDto> CreateMockGroupMapper()
+    {
+        var mock = Substitute.For<IAttributeMapper<GroupDto>>();
+        return mock;
+    }
+
+    /// <summary>
     /// Tests that GetGroup throws DomainException when the discovery service throws a DomainException.
     /// </summary>
     [Fact]
@@ -19,8 +28,9 @@ public class GetADGroupInfoServiceTests
     {
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryService(new DomainException("Not joined to a domain."));
+        var groupMapper = CreateMockGroupMapper();
         var logger = Substitute.For<ILogger<GetADGroupInfoService>>();
-        var service = new GetADGroupInfoService(discoveryService, logger);
+        var service = new GetADGroupInfoService(discoveryService, groupMapper, logger);
 
         // Act
         var act = () => service.GetGroup("testgroup");
@@ -37,8 +47,9 @@ public class GetADGroupInfoServiceTests
     {
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryService(new DomainException("Not joined to a domain."));
+        var groupMapper = CreateMockGroupMapper();
         var logger = Substitute.For<ILogger<GetADGroupInfoService>>();
-        var service = new GetADGroupInfoService(discoveryService, logger);
+        var service = new GetADGroupInfoService(discoveryService, groupMapper, logger);
 
         // Act
         var act = () => service.GetGroup(null!);
@@ -55,8 +66,9 @@ public class GetADGroupInfoServiceTests
     {
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryService(new DomainException("Not joined to a domain."));
+        var groupMapper = CreateMockGroupMapper();
         var logger = Substitute.For<ILogger<GetADGroupInfoService>>();
-        var service = new GetADGroupInfoService(discoveryService, logger);
+        var service = new GetADGroupInfoService(discoveryService, groupMapper, logger);
 
         // Act
         var act = () => service.GetGroup("");

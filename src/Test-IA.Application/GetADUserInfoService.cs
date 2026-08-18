@@ -45,25 +45,14 @@ namespace TestIA.Application;
 public class GetADUserInfoService : IGetADUserInfo
 {
     /// <summary>
-    /// Maps LDAP attribute names to their human-readable display labels.
-    /// <para>
-    /// This dictionary defines the exact set of attributes that will be requested from
-    /// Active Directory during the LDAP search. Only these attributes are fetched,
-    /// which reduces network traffic and improves performance.
-    /// </para>
-    /// </summary>
-    private static readonly Dictionary<string, string> _attributeNames = new()
-    {
-        { "displayName", "Display Name" },
-        { "employeeID", "Employee ID" },
-        { "mail", "Email" },
-        { "userPrincipalName", "UPN" },
-    };
-
-    /// <summary>
     /// Service responsible for dynamically discovering the Active Directory environment.
     /// </summary>
     private readonly ADDomainDiscoveryService _discoveryService;
+
+    /// <summary>
+    /// Mapper for converting LDAP search result entries to <see cref="UserDto"/> instances.
+    /// </summary>
+    private readonly IAttributeMapper<UserDto> _userMapper;
 
     /// <summary>
     /// Logger for structured application events (searches, errors, results).
@@ -77,16 +66,25 @@ public class GetADUserInfoService : IGetADUserInfo
     /// The Active Directory discovery service used to locate the domain, Domain Controller,
     /// and LDAP Base DN dynamically at runtime. Must not be null.
     /// </param>
-    /// <param name="logger">
-    /// The logger instance used for structured logging of search operations and errors.
+    /// <param name="userMapper">
+    /// The mapper used to convert LDAP search result entries to <see cref="UserDto"/> instances.
     /// Must not be null.
     /// </param>
-    public GetADUserInfoService(ADDomainDiscoveryService discoveryService, ILogger<GetADUserInfoService> logger)
+    /// <param name="logger">
+    /// The logger instance used for structured logging of user operations.
+    /// Must not be null.
+    /// </param>
+    public GetADUserInfoService(
+        ADDomainDiscoveryService discoveryService,
+        IAttributeMapper<UserDto> userMapper,
+        ILogger<GetADUserInfoService> logger)
     {
         _discoveryService = discoveryService ?? throw new ArgumentNullException(nameof(discoveryService));
+        _userMapper = userMapper ?? throw new ArgumentNullException(nameof(userMapper));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <inheritdoc />
     /// <summary>
     /// Retrieves user information from Active Directory by the user's <c>sAMAccountName</c>.
     /// <para>
@@ -154,9 +152,9 @@ public class GetADUserInfoService : IGetADUserInfo
             var filter = $"(&(objectCategory=person)(objectClass=user)(sAMAccountName={escapedSamAccountName}))";
             _logger.LogInformation("Executing LDAP search with filter: {Filter}", filter);
 
-            // Create a subtree search request that fetches only the attributes we need.
+            // Create a subtree search request that fetches only the attributes declared by the mapper.
             // SearchScope.Subtree searches the entire directory tree under the Base DN.
-            var request = new SearchRequest(baseDN, filter, SearchScope.Subtree, _attributeNames.Keys.ToArray());
+            var request = new SearchRequest(baseDN, filter, SearchScope.Subtree, _userMapper.Attributes.Keys.ToArray());
 
             // Send the request and cast the response to SearchResponse.
             // SendRequest blocks until the Directory Server responds or times out.
@@ -169,24 +167,18 @@ public class GetADUserInfoService : IGetADUserInfo
                 throw new UserNotFoundException($"User with samAccountName '{samAccountName}' not found in Active Directory.");
             }
 
-            // Extract the requested attributes from the first (and expected only) matching entry.
-            // The ExtractAttributes helper converts the DirectoryAttribute collection into a plain Dictionary.
+            // Extract the first (and expected only) matching entry.
             var entry = response.Entries[0];
-            var attributes = entry.ExtractAttributes(_attributeNames);
 
-            // Map each attribute to its corresponding DTO field.
-            // displayName defaults to "(unknown)" if the attribute is not set on the user object.
-            // employeeID, mail, and userPrincipalName remain null if not set.
-            var displayName = attributes["displayName"] ?? "(unknown)";
-            var employeeId = attributes["employeeID"];
-            var mail = attributes["mail"];
-            var userPrincipalName = attributes["userPrincipalName"];
+            // Use the mapper to convert the LDAP entry to a UserDto.
+            // The mapper handles attribute extraction, null handling, and default values.
+            var userDto = _userMapper.Map(entry);
 
             // Log the successful lookup with structured output for auditability.
-            _logger.LogInformation("Found user: {DisplayName} ({UPN})", displayName, userPrincipalName);
+            _logger.LogInformation("Found user: {DisplayName} ({UPN})", userDto.DisplayName, userDto.UserPrincipalName);
 
             // Return the strongly-typed DTO record to the caller.
-            return new UserDto(displayName, employeeId, mail, userPrincipalName);
+            return userDto;
         }
         catch (LdapException ex)
         {

@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using TestIA.Application;
@@ -36,6 +36,15 @@ public class ThrowingADDomainDiscoveryService : ADDomainDiscoveryService
 public class GetADUserInfoServiceTests
 {
     /// <summary>
+    /// Creates a mock user attribute mapper for tests.
+    /// </summary>
+    private static IAttributeMapper<UserDto> CreateMockUserMapper()
+    {
+        var mock = Substitute.For<IAttributeMapper<UserDto>>();
+        return mock;
+    }
+
+    /// <summary>
     /// Tests that GetUser throws DomainException when the discovery service throws a DomainException.
     /// </summary>
     [Fact]
@@ -43,8 +52,9 @@ public class GetADUserInfoServiceTests
     {
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryService(new DomainException("Not joined to a domain."));
+        var userMapper = CreateMockUserMapper();
         var logger = Substitute.For<ILogger<GetADUserInfoService>>();
-        var service = new GetADUserInfoService(discoveryService, logger);
+        var service = new GetADUserInfoService(discoveryService, userMapper, logger);
 
         // Act
         var act = () => service.GetUser("testuser");
@@ -61,8 +71,9 @@ public class GetADUserInfoServiceTests
     {
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryService(new DomainException("Not joined to a domain."));
+        var userMapper = CreateMockUserMapper();
         var logger = Substitute.For<ILogger<GetADUserInfoService>>();
-        var service = new GetADUserInfoService(discoveryService, logger);
+        var service = new GetADUserInfoService(discoveryService, userMapper, logger);
 
         // Act
         var act = () => service.GetUser(null!);
@@ -79,8 +90,9 @@ public class GetADUserInfoServiceTests
     {
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryService(new DomainException("Not joined to a domain."));
+        var userMapper = CreateMockUserMapper();
         var logger = Substitute.For<ILogger<GetADUserInfoService>>();
-        var service = new GetADUserInfoService(discoveryService, logger);
+        var service = new GetADUserInfoService(discoveryService, userMapper, logger);
 
         // Act
         var act = () => service.GetUser("");

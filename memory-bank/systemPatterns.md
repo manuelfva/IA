@@ -63,7 +63,16 @@ Service interfaces are defined in the Domain layer:
 
 This allows the services to be replaced or mocked in tests.
 
-### 5. Logging Abstraction
+### 5. Attribute Mapper Pattern
+
+A generic `IAttributeMapper<TDto>` interface in the Application layer centralizes LDAP-to-DTO mapping:
+- `IAttributeMapper<TDto>` — declares `Attributes` dictionary and `Map(SearchResultEntry)` method
+- `UserAttributeMapper` — implements `IAttributeMapper<UserDto>`, maps `displayName`, `employeeID`, `mail`, `userPrincipalName`
+- `GroupAttributeMapper` — implements `IAttributeMapper<GroupDto>`, maps `displayName` + `member` DN array
+
+Mappers are injected via DI into their respective services, replacing the previous static `_attributeNames` dictionaries. This provides a reusable, testable pattern for future DTOs. To add a new DTO, create a new mapper implementation and register it in DI.
+
+### 6. Logging Abstraction
 
 The `ILoggerService` interface wraps `Microsoft.Extensions.Logging.ILogger` to provide a consistent logging abstraction. This decouples the console app from the specific logging framework and allows for alternative logging implementations.
 
@@ -176,6 +185,8 @@ graph TD
 - **Record Types**: `UserDto` and `GroupDto` use C# record types for immutable data transfer.
 - **Domain Exception Pattern**: Custom exceptions (`UserNotFoundException`, `GroupNotFoundException`) inheriting from `DomainException` for domain-specific error handling.
 - **Facade Pattern**: `ADDomainDiscoveryService` encapsulates the complexity of domain, DC, and Base DN discovery behind a single `Discover()` method.
+- **Attribute Mapper Pattern**: `IAttributeMapper<TDto>` generic interface centralizes LDAP-to-DTO mapping. `UserAttributeMapper` and `GroupAttributeMapper` implement it. Mappers are injected via DI, providing a reusable pattern for future DTOs.
+- **Factory Method**: Each mapper exposes a `Map(SearchResultEntry)` factory method that constructs the target DTO from an LDAP entry.
 
 ### 7. Authorization Flow
 

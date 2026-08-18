@@ -6,6 +6,8 @@ The project has been created with all core services implemented and a WebApp pre
 
 ## Recent Changes
 
+- **Attribute Mapper Refactoring**: Replaced static `_attributeNames` dictionaries in `GetADUserInfoService` and `GetADGroupInfoService` with a generic `IAttributeMapper<TDto>` interface. Created `UserAttributeMapper` and `GroupAttributeMapper` implementations using composition. This centralizes attribute-to-DTO mapping logic, eliminates duplication, and provides a reusable pattern for future DTOs. All 22 tests pass.
+- **Comprehensive XML Documentation & Inline Comments**: Added extensive XML documentation comments (`///`) and human-friendly inline comments (`//`) to all files in the Test-IA.Application project. Documentation explains the *why* (business context, security considerations, LDAP patterns) rather than the *what* (code repetition).
 - Initial project creation following Clean Architecture principles.
 - All four projects created: Domain, Application, Logging, ConsoleApp.
 - Unit tests created for both services and the logging project.
@@ -53,6 +55,7 @@ The project has been created with all core services implemented and a WebApp pre
 
 - **Namespace convention**: `TestIA.Domain`, `TestIA.Application`, `TestIA.Logging`, `TestIA.ConsoleApp`, `TestIA.Tests`, `TestIA.WebApp` (no hyphens in namespaces).
 - **DTOs as records**: `UserDto` and `GroupDto` are immutable record types with positional parameters.
+- **Attribute Mapper Pattern**: `IAttributeMapper<TDto>` generic interface in Application layer maps LDAP `SearchResultEntry` to DTOs. `UserAttributeMapper` and `GroupAttributeMapper` implement it. Mappers are injected via DI, replacing the previous static `_attributeNames` dictionaries. This provides a reusable, testable pattern for future DTOs.
 - **Exception hierarchy**: `DomainException` is the base, with `UserNotFoundException` and `GroupNotFoundException` as specialized children.
 - **Service registration**: Done via `ServiceCollectionExtensions.AddTestIAServices()` extension method in the Application project.
 - **Testing pattern**: `ThrowingADDomainDiscoveryService` extends `ADDomainDiscoveryService` and overrides `Discover()` to throw controlled exceptions. This avoids the need for mocking the discovery service entirely.
