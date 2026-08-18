@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using TestIA.Application;
 using TestIA.Domain;
 using TestIA.Logging;
 
@@ -18,6 +19,8 @@ public class IndexModel : PageModel
     private readonly IGetADGroupInfo _groupInfoService;
     private readonly IUserWriter _userWriter;
     private readonly ILoggerService _logger;
+    private readonly IAttributeMapper<UserDto> _userMapper;
+    private readonly IAttributeMapper<GroupDto> _groupMapper;
 
     /// <summary>
     /// Initializes a new instance of the IndexModel class.
@@ -26,12 +29,22 @@ public class IndexModel : PageModel
     /// <param name="groupInfoService">The group information service.</param>
     /// <param name="userWriter">The user writer service for updating AD attributes.</param>
     /// <param name="logger">The logging service.</param>
-    public IndexModel(IGetADUserInfo userInfoService, IGetADGroupInfo groupInfoService, IUserWriter userWriter, ILoggerService logger)
+    /// <param name="userMapper">The user attribute mapper for dynamic display rendering.</param>
+    /// <param name="groupMapper">The group attribute mapper for dynamic display rendering.</param>
+    public IndexModel(
+        IGetADUserInfo userInfoService,
+        IGetADGroupInfo groupInfoService,
+        IUserWriter userWriter,
+        ILoggerService logger,
+        IAttributeMapper<UserDto> userMapper,
+        IAttributeMapper<GroupDto> groupMapper)
     {
         _userInfoService = userInfoService ?? throw new ArgumentNullException(nameof(userInfoService));
         _groupInfoService = groupInfoService ?? throw new ArgumentNullException(nameof(groupInfoService));
         _userWriter = userWriter ?? throw new ArgumentNullException(nameof(userWriter));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _userMapper = userMapper ?? throw new ArgumentNullException(nameof(userMapper));
+        _groupMapper = groupMapper ?? throw new ArgumentNullException(nameof(groupMapper));
     }
 
     /// <summary>
@@ -61,6 +74,16 @@ public class IndexModel : PageModel
     /// The result of the group search operation.
     /// </summary>
     public GroupDto? GroupResult { get; set; }
+
+    /// <summary>
+    /// Dynamic display values for the user result, populated by <see cref="IAttributeMapper{TDto}.GetDisplayValues"/>.
+    /// </summary>
+    public Dictionary<string, string>? UserDisplayValues { get; set; }
+
+    /// <summary>
+    /// Dynamic display values for the group result, populated by <see cref="IAttributeMapper{TDto}.GetDisplayValues"/>.
+    /// </summary>
+    public Dictionary<string, string>? GroupDisplayValues { get; set; }
 
     /// <summary>
     /// Error message if a search operation fails.
@@ -108,6 +131,8 @@ public class IndexModel : PageModel
             try
             {
                 UserResult = _userInfoService.GetUser(UserSearchTerm);
+                UserDisplayValues = _userMapper.GetDisplayValues(UserResult);
+                GroupDisplayValues = null;
                 Error = null;
             }
             catch (UserNotFoundException ex)
@@ -134,6 +159,8 @@ public class IndexModel : PageModel
             try
             {
                 GroupResult = _groupInfoService.GetGroup(GroupSearchTerm);
+                UserDisplayValues = null;
+                GroupDisplayValues = _groupMapper.GetDisplayValues(GroupResult);
                 Error = null;
             }
             catch (GroupNotFoundException ex)

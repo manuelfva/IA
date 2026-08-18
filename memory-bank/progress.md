@@ -24,6 +24,7 @@
   - `launchSettings.json` with HTTP/HTTPS URLs.
   - Conditional `UseHttpsRedirection()` for Development mode.
   - `ILoggerService` injected into `IndexModel` for error logging.
+  - **Dynamic display**: `IAttributeMapper<UserDto>` and `IAttributeMapper<GroupDto>` injected; `UserDisplayValues` and `GroupDisplayValues` properties populated in `OnPost()`; `Index.cshtml` uses `@foreach` loops over display dictionaries.
   - **Glassmorphism + Aurora UI**: Dark theme, animated aurora background, frosted glass components, gradient text, luminous buttons.
   - CSS custom properties, `backdrop-filter: blur()`, `@keyframes` animations.
   - **Windows Authentication**: `AddNegotiate()` for Kerberos/NTLM.
@@ -63,3 +64,4 @@ The codebase is complete with both ConsoleApp and WebApp presentation layers, At
 - **Decision**: Attribute Mapper refactoring — replaced static `_attributeNames` dictionaries with a generic `IAttributeMapper<TDto>` interface. The interface lives in the Application layer (not Domain) because it depends on `SearchResultEntry` from `System.DirectoryServices.Protocols`. This keeps the Domain layer free of Infrastructure dependencies while providing a reusable, testable mapping pattern for future DTOs.
 - **Decision**: AD Discovery Caching — `ADDomainDiscoveryService.Discover()` caches its result internally after the first successful call. This eliminates duplicate LDAP queries when multiple services (authorization, user lookup, group lookup) all require the domain, DC, and Base DN. The cache is instance-level (not static), so each DI-scoped instance caches independently. Tests remain unaffected because `ThrowingADDomainDiscoveryService` overrides `Discover()`.
 - **Decision**: Dynamic Console Display — ConsoleApp uses `IAttributeMapper.GetDisplayValues()` to render attributes dynamically via `foreach` loops instead of hardcoded `LogInformation` calls. Adding new attributes only requires updating the mapper, not the console app.
+- **Decision**: Dynamic WebApp Display — WebApp `Index.cshtml` uses `@foreach` loops over `Model.UserDisplayValues` and `Model.GroupDisplayValues` instead of hardcoded HTML table rows. Both ConsoleApp and WebApp share the same `GetDisplayValues()` pattern, ensuring consistent dynamic rendering across all presentation layers.

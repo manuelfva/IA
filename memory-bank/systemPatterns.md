@@ -82,9 +82,16 @@ This prevents redundant Active Directory queries when multiple services (authori
 
 ### 7. Logging Abstraction
 
-The `ILoggerService` interface wraps `Microsoft.Extensions.Logging.ILogger` to provide a consistent logging abstraction. This decouples the console app from the specific logging framework and allows for alternative logging implementations.
+The `ILoggerService` interface wraps `Microsoft.Extensions.Logging.ILogger` to provide a consistent logging abstraction. This decouples the console app and web app from the specific logging framework and allows for alternative logging implementations.
 
-### 8. Windows Integrated Authentication with Group Authorization
+### 8. Dynamic Display Pattern
+
+Both ConsoleApp and WebApp use `IAttributeMapper<TDto>.GetDisplayValues(TDto)` for dynamic attribute rendering:
+- **ConsoleApp**: `foreach` loops over `Dictionary<string, string>` to render user/group attributes via `ILoggerService.LogInformation()`
+- **WebApp**: Razor `@foreach` loops over `Model.UserDisplayValues` and `Model.GroupDisplayValues` to render HTML table rows
+- **Benefit**: Adding new attributes to a mapper automatically shows them in all presentation layers — no hardcoded HTML or logging calls needed
+
+### 9. Windows Integrated Authentication with Group Authorization
 
 Both ConsoleApp and WebApp require users to be members of a configured Active Directory group to access the application:
 
@@ -197,7 +204,7 @@ graph TD
 - **Attribute Mapper Pattern**: `IAttributeMapper<TDto>` generic interface centralizes LDAP-to-DTO mapping. `UserAttributeMapper` and `GroupAttributeMapper` implement it. Mappers are injected via DI, providing a reusable pattern for future DTOs. Each mapper also implements `GetDisplayValues(TDto)` for dynamic console/web display.
 - **Factory Method**: Each mapper exposes a `Map(SearchResultEntry)` factory method that constructs the target DTO from an LDAP entry.
 
-### 9. Authorization Flow
+### 10. Authorization Flow
 
 Both ConsoleApp and WebApp perform authorization checks before allowing access to AD services:
 

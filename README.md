@@ -57,7 +57,7 @@ graph TB
 | **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
 | **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations with dynamic attribute display via `GetDisplayValues()` |
-| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface for AD lookups |
+| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()`, Glassmorphism + Aurora UI |
 
 ## Projects
 
@@ -211,4 +211,4 @@ Test-IA/
 
 ## Last Updated
 
-18/08/2026 12:49
+18/08/2026 14:11

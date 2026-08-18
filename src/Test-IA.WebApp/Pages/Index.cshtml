@@ -72,10 +72,10 @@
                         <h3>User Information <span class="result-badge">Found</span></h3>
                         <div class="result-table">
                             <table>
-                                <tr><th>Display Name</th><td>@Model.UserResult.DisplayName</td></tr>
-                                <tr><th>Employee ID</th><td>@(Model.UserResult.EmployeeId ?? "(not set)")</td></tr>
-                                <tr><th>Email</th><td>@(Model.UserResult.Mail ?? "(not set)")</td></tr>
-                                <tr><th>UPN</th><td>@(Model.UserResult.UserPrincipalName ?? "(not set)")</td></tr>
+                                @foreach (var kvp in Model.UserDisplayValues!)
+                                {
+                                    <tr><th>@kvp.Key</th><td>@kvp.Value</td></tr>
+                                }
                             </table>
                         </div>
                     </div>
@@ -110,15 +110,10 @@
                         <h3>Group Information <span class="result-badge">Found</span></h3>
                         <div class="result-table">
                             <table>
-                                <tr><th>Display Name</th><td>@Model.GroupResult.DisplayName</td></tr>
-                                <tr><th>Members</th><td>
-                                    <ul class="members-list">
-                                        @foreach (var member in Model.GroupResult.Members)
-                                        {
-                                            <li>@member</li>
-                                        }
-                                    </ul>
-                                </td></tr>
+                                @foreach (var kvp in Model.GroupDisplayValues!)
+                                {
+                                    <tr><th>@kvp.Key</th><td>@kvp.Value</td></tr>
+                                }
                             </table>
                         </div>
                     </div>
