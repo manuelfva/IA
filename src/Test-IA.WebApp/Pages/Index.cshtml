@@ -124,6 +124,61 @@
                     </div>
                 }
             </div>
+
+            <!-- User Update Card -->
+            <div class="search-card">
+                <div class="card-header">
+                    <div class="card-header-icon update">&#9998;</div>
+                    <div>
+                        <h2>Update User</h2>
+                        <p class="card-description">Modify user 'info' and 'mobile' attributes</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="UserUpdateSamAccountName">samAccountName <span class="label-hint">— e.g. MFVA649T</span></label>
+                        <input type="text" id="UserUpdateSamAccountName" name="UserUpdateSamAccountName"
+                               value="@(Model?.UserUpdateSamAccountName ?? string.Empty)" placeholder="Enter user samAccountName" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdateInfo">Info <span class="label-hint">— optional</span></label>
+                        <input type="text" id="UpdateInfo" name="UpdateInfo"
+                               value="@(Model?.UpdateInfo ?? string.Empty)" placeholder="Enter info value" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdateMobile">Mobile <span class="label-hint">— optional</span></label>
+                        <input type="text" id="UpdateMobile" name="UpdateMobile"
+                               value="@(Model?.UpdateMobile ?? string.Empty)" placeholder="Enter mobile number" />
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" name="SearchAction" value="Update" class="btn btn-update">
+                        <span>&#9998;</span> Update User
+                    </button>
+                </div>
+
+                @if (Model?.UpdateResult != null)
+                {
+                    @if (Model.UpdateResult.Success)
+                    {
+                        <div class="result-section">
+                            <h3>Update Result <span class="result-badge result-badge-success">Success</span></h3>
+                            <div class="result-table">
+                                <table>
+                                    <tr><th>Status</th><td>@Model.UpdateResult.Message</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-error">
+                            <span class="alert-icon">&#9888;</span>
+                            <div><strong>Update Failed:</strong> @Model.UpdateResult.Message</div>
+                        </div>
+                    }
+                }
+            </div>
         </div>
     </form>
 </main>

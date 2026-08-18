@@ -20,7 +20,7 @@ public interface IGetADUserInfo
 /// Represents a user's information retrieved from Active Directory.
 /// </summary>
 /// <param name="DisplayName">The user's display name.</param>
-/// <param name="EmployeeId">The user's employee ID.</param>
-/// <param name="Mail">The user's email address.</param>
-/// <param name="UserPrincipalName">The user's principal name (UPN).</param>
+/// <param name="EmployeeId">The user's employee ID (nullable if not set).</param>
+/// <param name="Mail">The user's email address (nullable if not set).</param>
+/// <param name="UserPrincipalName">The user's principal name (UPN) (nullable if not set).</param>
 public record UserDto(string DisplayName, string? EmployeeId, string? Mail, string? UserPrincipalName);

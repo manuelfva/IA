@@ -16,6 +16,7 @@ public class IndexModel : PageModel
 {
     private readonly IGetADUserInfo _userInfoService;
     private readonly IGetADGroupInfo _groupInfoService;
+    private readonly IUserWriter _userWriter;
     private readonly ILoggerService _logger;
 
     /// <summary>
@@ -23,11 +24,13 @@ public class IndexModel : PageModel
     /// </summary>
     /// <param name="userInfoService">The user information service.</param>
     /// <param name="groupInfoService">The group information service.</param>
+    /// <param name="userWriter">The user writer service for updating AD attributes.</param>
     /// <param name="logger">The logging service.</param>
-    public IndexModel(IGetADUserInfo userInfoService, IGetADGroupInfo groupInfoService, ILoggerService logger)
+    public IndexModel(IGetADUserInfo userInfoService, IGetADGroupInfo groupInfoService, IUserWriter userWriter, ILoggerService logger)
     {
         _userInfoService = userInfoService ?? throw new ArgumentNullException(nameof(userInfoService));
         _groupInfoService = groupInfoService ?? throw new ArgumentNullException(nameof(groupInfoService));
+        _userWriter = userWriter ?? throw new ArgumentNullException(nameof(userWriter));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -65,10 +68,33 @@ public class IndexModel : PageModel
     public string? Error { get; set; }
 
     /// <summary>
-    /// Handles all POST requests. Determines whether to search for a user or a group
+    /// The samAccountName entered for user update.
+    /// </summary>
+    [BindProperty]
+    public string? UserUpdateSamAccountName { get; set; }
+
+    /// <summary>
+    /// The new value for the 'info' attribute.
+    /// </summary>
+    [BindProperty]
+    public string? UpdateInfo { get; set; }
+
+    /// <summary>
+    /// The new value for the 'mobile' attribute.
+    /// </summary>
+    [BindProperty]
+    public string? UpdateMobile { get; set; }
+
+    /// <summary>
+    /// The result of the user update operation.
+    /// </summary>
+    public UserUpdateResult? UpdateResult { get; set; }
+
+    /// <summary>
+    /// Handles all POST requests. Determines whether to search for a user, a group, or update a user
     /// based on the SearchAction form value.
     /// </summary>
-    /// <returns>A page result that re-renders the page with search results.</returns>
+    /// <returns>A page result that re-renders the page with search or update results.</returns>
     public IActionResult OnPost()
     {
         if (string.Equals(SearchAction, "User", StringComparison.OrdinalIgnoreCase))
@@ -121,6 +147,59 @@ public class IndexModel : PageModel
                 GroupResult = null;
                 _logger.LogError(ex, "Error retrieving group information for {SamAccountName}", GroupSearchTerm);
                 Error = $"Error retrieving group information: {ex.Message}";
+            }
+        }
+        else if (string.Equals(SearchAction, "Update", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(UserUpdateSamAccountName))
+            {
+                Error = "Please enter a samAccountName to update a user.";
+                return Page();
+            }
+
+            if (string.IsNullOrWhiteSpace(UpdateInfo) && string.IsNullOrWhiteSpace(UpdateMobile))
+            {
+                Error = "Please enter at least one attribute value (info or mobile) to update.";
+                return Page();
+            }
+
+            try
+            {
+                var request = new UserUpdateRequest(
+                    SamAccountName: UserUpdateSamAccountName,
+                    Info: UpdateInfo,
+                    Mobile: UpdateMobile,
+                    StreetAddress: null,
+                    City: null,
+                    State: null,
+                    PostalCode: null,
+                    Department: null,
+                    Title: null,
+                    PhoneNumber: null);
+
+                UpdateResult = _userWriter.UpdateUser(request);
+                Error = null;
+
+                if (!UpdateResult.Success)
+                {
+                    _logger.LogWarning("Update failed for user {SamAccountName}: {Message}", UserUpdateSamAccountName, UpdateResult.Message);
+                }
+                else
+                {
+                    _logger.LogInformation("Successfully updated user {SamAccountName}: {Message}", UserUpdateSamAccountName, UpdateResult.Message);
+                }
+            }
+            catch (UserNotFoundException ex)
+            {
+                UpdateResult = null;
+                _logger.LogError("User not found for update: {SamAccountName}", UserUpdateSamAccountName);
+                Error = ex.Message;
+            }
+            catch (DomainException ex)
+            {
+                UpdateResult = null;
+                _logger.LogError(ex, "Error updating user {SamAccountName}", UserUpdateSamAccountName);
+                Error = $"Error updating user: {ex.Message}";
             }
         }
 
