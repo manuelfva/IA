@@ -1,4 +1,4 @@
-# Test-IA
+﻿# Test-IA
 
 A .NET 10.0 solution that demonstrates Active Directory user and group lookup services using real LDAP connections with Windows Integrated Authentication.
 
@@ -53,8 +53,8 @@ graph TB
 
 | Layer | Responsibility |
 |---|---|
-| **Domain** | Service interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`), DTOs (`UserDto`, `GroupDto`), and domain exceptions (`DomainException`, `AccessDeniedException`, `MissingGroupException`) |
-| **Application** | Service implementations, Active Directory discovery, LDAP connection management, group authorization logic, DI registration |
+| **Domain** | Service interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`, `IUserWriter`), DTOs (`UserDto`, `GroupDto`), and domain exceptions (`DomainException`, `AccessDeniedException`, `MissingGroupException`) |
+| **Application** | Service implementations, Active Directory discovery, LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
 | **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations |
 | **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface for AD lookups |
@@ -64,7 +64,7 @@ graph TB
 | Project | Type | Target Framework | Description | Depends On |
 |---|---|---|---|---|
 | Test-IA.Domain | Class Library | net10.0 | Domain interfaces, DTOs, and exceptions | None |
-| Test-IA.Application | Class Library | net10.0 | Service implementations, AD discovery, LDAP access | Test-IA.Domain |
+| Test-IA.Application | Class Library | net10.0 | Service implementations, AD discovery, LDAP access, Attribute Mappers | Test-IA.Domain |
 | Test-IA.Logging | Class Library | net10.0 | Logging abstraction | None |
 | Test-IA.ConsoleApp | Console Application | net10.0 | Composition root and AD demonstration | Test-IA.Application, Test-IA.Logging |
 | Test-IA.WebApp | Web Application | net10.0 | ASP.NET Core Razor Pages web interface for AD lookups | Test-IA.Application, Test-IA.Domain, Test-IA.Logging |
@@ -82,71 +82,48 @@ Retrieves Active Directory user information by `samAccountName`.
 
 Retrieves Active Directory group information by `samAccountName`.
 
-**Returns:** `GroupDto` with `DisplayName` and `Members` (array of distinguished names)
+**Returns:** `GroupDto` with `DisplayName` and `Members` (array of resolved display names, not DNs)
 
 ### IUserGroupAuthorizationService
 
-Checks whether the current Windows user is a member of a configured Active Directory group for authorization purposes.
+Checks whether the current Windows user is a member of a configured Active Directory group.
 
-**Returns:** `bool` — `true` if the user is a member, `false` otherwise
+**Returns:** `bool` — `true` if the user is a group member, `false` otherwise.
 
-**Throws:** `MissingGroupException` if the configured authorization group does not exist in Active Directory
+### IUserWriter
+
+Updates Active Directory user attributes via LDAP modify operations.
+
+**Supported attributes:** `info`, `mobile`, `streetAddress`, `l` (city), `st` (state), `postalCode`, `department`, `title`, `telephoneNumber`
 
 ## Dependency Injection
 
-All services are registered via `Microsoft.Extensions.DependencyInjection` in both the console application's `Program.cs` and the web application's `Program.cs`:
+All services are registered via `ServiceCollectionExtensions.AddTestIAServices()` in the composition root (`Program.cs`). Services are registered as **Scoped** (new instance per DI scope).
 
-- `ADDomainDiscoveryService` (Scoped)
-- `IGetADUserInfo` / `GetADUserInfoService` (Scoped)
-- `IGetADGroupInfo` / `GetADGroupInfoService` (Scoped)
-- `IUserGroupAuthorizationService` / `UserGroupAuthorizationService` (Scoped)
-- `ILoggerService` / `LoggingService` (Singleton)
-- `AuthorizationSettings` (bound from `appsettings.json` via `IOptions<T>`)
+**Registrations:**
+- `ADDomainDiscoveryService` → Scoped
+- `IAttributeMapper<UserDto>` / `UserAttributeMapper` → Scoped
+- `IAttributeMapper<GroupDto>` / `GroupAttributeMapper` → Scoped
+- `IGetADUserInfo` / `GetADUserInfoService` → Scoped
+- `IGetADGroupInfo` / `GetADGroupInfoService` → Scoped
+- `IUserGroupAuthorizationService` / `UserGroupAuthorizationService` → Scoped
+- `IUserWriter` / `UserWriterService` → Scoped
 
 ## Configuration
 
-The application uses `appsettings.json` for configurable settings:
-
-### Logging
-
-```json
-"Logging": {
-  "LogLevel": {
-    "Default": "Information"
-  }
-}
-```
-
-### Authorization
-
-```json
-"Authorization": {
-  "RequiredGroup": "Employees of IT"
-}
-```
-
-- `RequiredGroup`: The Active Directory group samAccountName that users must be a member of to access the application.
-- Configurable per environment via `appsettings.Development.json`, `appsettings.Production.json`, etc.
-- The application validates this setting on startup and fails if it's empty or missing.
-
-No static LDAP configuration is required. The application dynamically discovers:
-
-- Active Directory domain (via `Domain.GetCurrentDomain()`)
-- Domain Controller (via `DirectoryEntry` RootDSE)
-- LDAP Base DN (via `defaultNamingContext` attribute)
-
-Authentication uses **Windows Integrated Authentication** (Negotiate/Kerberos) with the current user's security context.
+- **ConsoleApp:** `appsettings.json` and `appsettings.Development.json` with structured logging configuration via `Microsoft.Extensions.Configuration.Json`.
+- **WebApp:** ASP.NET Core default configuration (`appsettings.json`, `appsettings.Development.json`, environment variables).
+- **Authorization:** `Authorization.RequiredGroup` in `appsettings.json` — the AD group `sAMAccountName` that users must be a member of to access the application.
 
 ## Getting Started
 
 ### Prerequisites
 
-- **Windows machine joined to an Active Directory domain**
-- **.NET 10.0 SDK**
+- Windows machine joined to an Active Directory domain
+- .NET 10.0 SDK installed
 
-### Build and Run
+### Console Application
 
-**Console Application:**
 ```powershell
 dotnet restore
 dotnet build
@@ -183,11 +160,11 @@ dotnet test
 ```
 
 **Test Categories:**
-- **LoggingServiceTests** (7 tests) - Constructor validation, null message handling, valid message handling
-- **GetADUserInfoServiceTests** (3 tests) - Discovery failure, null/empty samAccountName
-- **GetADGroupInfoServiceTests** (3 tests) - Discovery failure, null/empty samAccountName
-- **MissingGroupExceptionTests** (3 tests) - Exception construction, inheritance from DomainException
-- **UserGroupAuthorizationServiceTests** (9 tests) - Discovery failure, constructor validation, null dependency checks
+- **LoggingServiceTests** (7 tests) — Constructor validation, null message handling, valid message handling
+- **GetADUserInfoServiceTests** (3 tests) — Discovery failure, null/empty samAccountName
+- **GetADGroupInfoServiceTests** (3 tests) — Discovery failure, null/empty samAccountName
+- **MissingGroupExceptionTests** (3 tests) — Exception construction, inheritance from DomainException
+- **UserGroupAuthorizationServiceTests** (6 tests) — Discovery failure, constructor validation, null dependency checks
 
 > Tests pending execution.
 
@@ -222,16 +199,16 @@ dotnet test
 Test-IA/
 ├── src/
 │   ├── Test-IA.Domain/          # Interfaces, DTOs, exceptions
-│   ├── Test-IA.Application/     # Service implementations, AD discovery
+│   ├── Test-IA.Application/     # Service implementations, AD discovery, Attribute Mappers
 │   ├── Test-IA.Logging/         # Logging abstraction
 │   ├── Test-IA.ConsoleApp/      # Composition root, Main method
 │   └── Test-IA.WebApp/          # ASP.NET Core Razor Pages web interface
 ├── tests/
 │   └── Test-IA.Tests/           # xUnit tests
 ├── Test-IA.slnx                  # Solution file
-└── .cline/rules/                 # Repository conventions
+└── memory-bank/                  # Project memory bank
 ```
 
 ## Last Updated
 
-17/08/2026 13:19
+18/08/2026 11:02
