@@ -93,6 +93,19 @@ The following layers MUST be respected:
 
 ---
 
+## Attribute Mapping
+
+- Attribute mapping MUST use the `IAttributeMapper` pattern.
+- Static dictionaries, static classes, hardcoded attribute maps, or inline attribute-name mappings MUST NOT be used.
+- `IAttributeMapper` MUST define the abstraction for mapping domain properties to directory-specific LDAP attributes and vice versa.
+- Attribute mapper implementations MUST be provided through Dependency Injection.
+- AD DS and AD LDS MUST have separate `IAttributeMapper` implementations when their schemas or attribute names differ.
+- Attribute mapping MUST NOT be embedded directly in services, repositories, or LDAP access code.
+- Attribute names and mappings MUST be centralized within the corresponding `IAttributeMapper` implementation.
+- New attribute mappings MUST extend the appropriate mapper rather than introducing new static dictionaries or duplicated mappings.
+
+---
+
 ## Dependency Injection
 
 - ALL services MUST be registered via DI
@@ -114,6 +127,7 @@ The following layers MUST be respected:
 - AD DS and AD LDS MUST be treated as separate domains
 - MUST NOT assume shared schema or attributes
 - MUST use dedicated services for each system
+- Attribute mappings MUST be resolved through the appropriate `IAttributeMapper` implementation.
 - Shared abstractions MUST be explicitly designed (as per Interfaces and Contracts section)
 
 ---
