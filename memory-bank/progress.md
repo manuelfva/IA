@@ -35,14 +35,14 @@
 
 ## What's Left to Build
 
-1. **Generate README**: After successful build and test validation, generate a professional README.md following `.cline/rules/solution-readme.md`.
-2. **Generate `.gitignore`**: Create a comprehensive `.gitignore` file for the solution root following `.cline/rules/solution-workflow.md` Step 10.
+1. ~~**Generate README**: After successful build and test validation, generate a professional README.md following `.cline/rules/solution-readme.md`.~~ ✅ Done
+2. ~~**Generate `.gitignore`**: Create a comprehensive `.gitignore` file for the solution root following `.cline/rules/solution-workflow.md` Step 10.~~ ✅ Done
 
 ## Current Status
 
-**Phase**: Implementation complete. All validations passed. Ready for documentation generation.
+**Phase**: Complete. All validations passed.
 
-The codebase is complete with both ConsoleApp and WebApp presentation layers, Attribute Mapper refactoring, and comprehensive documentation. All 22 tests pass.
+The codebase is complete with both ConsoleApp and WebApp presentation layers, Attribute Mapper refactoring, dynamic console display, AD discovery caching, and comprehensive documentation. All 22 tests pass.
 
 ## Known Issues
 
@@ -61,3 +61,5 @@ The codebase is complete with both ConsoleApp and WebApp presentation layers, At
 - **Decision**: WebApp HTTPS redirect is disabled in Development mode to allow POST requests to reach page handlers.
 - **Decision**: WebApp UI uses Glassmorphism + Aurora design — dark theme with animated aurora background and frosted glass components.
 - **Decision**: Attribute Mapper refactoring — replaced static `_attributeNames` dictionaries with a generic `IAttributeMapper<TDto>` interface. The interface lives in the Application layer (not Domain) because it depends on `SearchResultEntry` from `System.DirectoryServices.Protocols`. This keeps the Domain layer free of Infrastructure dependencies while providing a reusable, testable mapping pattern for future DTOs.
+- **Decision**: AD Discovery Caching — `ADDomainDiscoveryService.Discover()` caches its result internally after the first successful call. This eliminates duplicate LDAP queries when multiple services (authorization, user lookup, group lookup) all require the domain, DC, and Base DN. The cache is instance-level (not static), so each DI-scoped instance caches independently. Tests remain unaffected because `ThrowingADDomainDiscoveryService` overrides `Discover()`.
+- **Decision**: Dynamic Console Display — ConsoleApp uses `IAttributeMapper.GetDisplayValues()` to render attributes dynamically via `foreach` loops instead of hardcoded `LogInformation` calls. Adding new attributes only requires updating the mapper, not the console app.

@@ -66,17 +66,25 @@ This allows the services to be replaced or mocked in tests.
 ### 5. Attribute Mapper Pattern
 
 A generic `IAttributeMapper<TDto>` interface in the Application layer centralizes LDAP-to-DTO mapping:
-- `IAttributeMapper<TDto>` — declares `Attributes` dictionary and `Map(SearchResultEntry)` method
-- `UserAttributeMapper` — implements `IAttributeMapper<UserDto>`, maps `displayName`, `employeeID`, `mail`, `userPrincipalName`
+- `IAttributeMapper<TDto>` — declares `Attributes` dictionary, `Map(SearchResultEntry)` method, and `GetDisplayValues(TDto)` method
+- `UserAttributeMapper` — implements `IAttributeMapper<UserDto>`, maps `displayName`, `employeeID`, `mail`, `userPrincipalName`, `info`, `mobile`
 - `GroupAttributeMapper` — implements `IAttributeMapper<GroupDto>`, maps `displayName` + `member` DN array
 
-Mappers are injected via DI into their respective services, replacing the previous static `_attributeNames` dictionaries. This provides a reusable, testable pattern for future DTOs. To add a new DTO, create a new mapper implementation and register it in DI.
+Mappers are injected via DI into their respective services, replacing the previous static `_attributeNames` dictionaries. This provides a reusable, testable pattern for future DTOs. To add a new DTO, create a new implementation of this interface (e.g., `ComputerAttributeMapper : IAttributeMapper<ComputerDto>`) and register it in DI.
 
-### 6. Logging Abstraction
+### 6. AD Discovery Caching
+
+`ADDomainDiscoveryService.Discover()` caches its result internally after the first successful call:
+- First call: performs the full 3-step LDAP discovery (domain → DC → Base DN), caches the result in `_cachedResult`
+- Subsequent calls: returns the cached `(DomainName, DomainController, BaseDN)` tuple instantly — no LDAP queries
+
+This prevents redundant Active Directory queries when multiple services (authorization, user lookup, group lookup) all require the environment parameters within the same application lifetime. The cache is instance-level (not static), so each DI-scoped instance caches independently. Tests remain unaffected because `ThrowingADDomainDiscoveryService` overrides `Discover()` and throws before the cache check.
+
+### 7. Logging Abstraction
 
 The `ILoggerService` interface wraps `Microsoft.Extensions.Logging.ILogger` to provide a consistent logging abstraction. This decouples the console app from the specific logging framework and allows for alternative logging implementations.
 
-### 6. Windows Integrated Authentication with Group Authorization
+### 8. Windows Integrated Authentication with Group Authorization
 
 Both ConsoleApp and WebApp require users to be members of a configured Active Directory group to access the application:
 
@@ -185,10 +193,11 @@ graph TD
 - **Record Types**: `UserDto` and `GroupDto` use C# record types for immutable data transfer.
 - **Domain Exception Pattern**: Custom exceptions (`UserNotFoundException`, `GroupNotFoundException`) inheriting from `DomainException` for domain-specific error handling.
 - **Facade Pattern**: `ADDomainDiscoveryService` encapsulates the complexity of domain, DC, and Base DN discovery behind a single `Discover()` method.
-- **Attribute Mapper Pattern**: `IAttributeMapper<TDto>` generic interface centralizes LDAP-to-DTO mapping. `UserAttributeMapper` and `GroupAttributeMapper` implement it. Mappers are injected via DI, providing a reusable pattern for future DTOs.
+- **Caching / Flyweight**: `ADDomainDiscoveryService.Discover()` caches its result internally after the first successful call. Subsequent calls return the cached tuple without performing another LDAP discovery, preventing redundant Active Directory queries.
+- **Attribute Mapper Pattern**: `IAttributeMapper<TDto>` generic interface centralizes LDAP-to-DTO mapping. `UserAttributeMapper` and `GroupAttributeMapper` implement it. Mappers are injected via DI, providing a reusable pattern for future DTOs. Each mapper also implements `GetDisplayValues(TDto)` for dynamic console/web display.
 - **Factory Method**: Each mapper exposes a `Map(SearchResultEntry)` factory method that constructs the target DTO from an LDAP entry.
 
-### 7. Authorization Flow
+### 9. Authorization Flow
 
 Both ConsoleApp and WebApp perform authorization checks before allowing access to AD services:
 

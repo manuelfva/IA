@@ -51,4 +51,23 @@ public interface IAttributeMapper<TDto>
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="entry"/> is null.</exception>
     TDto Map(SearchResultEntry entry);
+
+    /// <summary>
+    /// Extracts display values from a mapped DTO, pairing each attribute's
+    /// human-readable label with its corresponding value.
+    /// <para>
+    /// This method is used by presentation layers (e.g., console applications) to
+    /// dynamically render DTO properties without hardcoding attribute names or labels.
+    /// Null values are formatted as "(not set)" for clarity.
+    /// </para>
+    /// </summary>
+    /// <param name="dto">
+    /// The DTO instance returned by <see cref="Map"/>. Must not be null.
+    /// </param>
+    /// <returns>
+    /// A dictionary where keys are display labels (e.g., "Display Name")
+    /// and values are the formatted DTO property values (nulls shown as "(not set)").
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is null.</exception>
+    Dictionary<string, string> GetDisplayValues(TDto dto);
 }

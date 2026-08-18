@@ -75,6 +75,60 @@ The following layers MUST be respected:
 
 ---
 
+## External Connection Reuse and Caching
+
+- Connections to external repositories and services MUST be reused whenever the underlying client supports connection reuse.
+- This rule applies to LDAP / Active Directory, databases, HTTP services, and other external resources.
+- The first operation for a given endpoint and credential context MAY establish the connection or create the client.
+- Subsequent operations MUST reuse the existing cached connection or client instead of creating a new connection.
+- Connection and client management MUST be centralized in the Infrastructure layer.
+- Business and Application layers MUST NOT create, cache, or dispose external connections directly.
+- Cached resources MUST be keyed by all values that define their security and connectivity context, including, where applicable:
+  - Server or host
+  - Port
+  - Protocol or transport security
+  - Tenant or domain
+  - Authentication identity or credential context
+  - Database or repository name
+- Credentials, passwords, access tokens, and sensitive connection data MUST NOT be used as plain-text cache keys or written to logs.
+- Cache implementations MUST be thread-safe and MUST prevent multiple concurrent requests from creating duplicate connections for the same cache key.
+- The cache MUST support expiration, invalidation, and controlled recreation after connection failures.
+- A failed or invalid connection MUST NOT remain usable in the cache.
+- Transient failures MAY trigger reconnection according to the resilience policy defined by the Application layer.
+- Infrastructure MUST NOT perform unbounded automatic retries.
+- Cached connections and clients MUST be disposed gracefully when they expire, are invalidated, or when the application shuts down.
+- Connection reuse MUST NOT compromise isolation between different servers, tenants, domains, databases, or authentication contexts.
+- The implementation MUST expose abstractions through interfaces, for example:
+  - `ILdapConnectionFactory`
+  - `IDatabaseConnectionFactory`
+  - `IExternalClientCache`
+- The implementation MUST provide metrics or logs that distinguish:
+  - Cache hit
+  - Cache miss
+  - New connection created
+  - Connection invalidated
+  - Connection recreated after failure
+- Logs MUST include non-sensitive endpoint information and MUST NOT include credentials, passwords, tokens, or PII.
+- Tests MUST verify:
+  - The first request creates the connection.
+  - Subsequent requests reuse the cached connection.
+  - Concurrent requests do not create duplicate connections.
+  - Invalid or failed connections are removed and recreated.
+  - Different connection contexts do not share the same cached resource.
+---
+
+### LDAP Connection Reuse
+
+- LDAP connection creation MUST be handled by a centralized `ILdapConnectionFactory`.
+- The factory MUST first retrieve a valid connection from the cache.
+- If no valid connection exists, the factory MUST create, configure, authenticate, and cache one connection for the requested context.
+- LDAP connections MUST be invalidated when authentication fails, the server closes the connection, or the connection becomes unusable.
+- The factory MUST NOT create a new LDAP connection for every repository operation.
+- AD DS and AD LDS connections MUST use separate cache contexts and MUST NOT be mixed.
+- LDAP searches and modifications MUST reuse the cached connection whenever the connection is valid.
+
+---
+
 ## Reusability
 
 - ALWAYS check for existing services before creating new code

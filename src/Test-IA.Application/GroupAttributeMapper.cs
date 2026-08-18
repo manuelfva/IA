@@ -14,8 +14,8 @@ namespace TestIA.Application;
 /// <remarks>
 /// <b>Attribute mapping:</b>
 /// <list type="table">
-///   <item><description><c>displayName</c> ? <c>DisplayName</c> (defaults to "(unknown)" if missing)</description></item>
-///   <item><description><c>member</c> ? <c>Members</c> (array of Distinguished Names)</description></item>
+///   <item><description><c>displayName</c> → <c>DisplayName</c> (defaults to "(unknown)" if missing)</description></item>
+///   <item><description><c>member</c> → <c>Members</c> (array of Distinguished Names)</description></item>
 /// </list>
 /// <para>
 /// <b>Note:</b> This mapper extracts raw Distinguished Names for the <c>member</c> attribute.
@@ -68,7 +68,7 @@ public class GroupAttributeMapper : IAttributeMapper<GroupDto>
 
         // Extract the raw member Distinguished Names from the entry.
         // This is done separately because member is a multi-valued attribute that requires
-        // special handling � the calling service resolves each DN to its display name.
+        // special handling � the calling service resolves each DN to its display name.
         var memberDns = GetMemberValues(entry);
 
         // Return the strongly-typed DTO record with raw DNs.
@@ -109,5 +109,40 @@ public class GroupAttributeMapper : IAttributeMapper<GroupDto>
         }
 
         return members;
+    }
+
+    /// <summary>
+    /// Extracts display values from a <see cref="GroupDto"/>, pairing each attribute's
+    /// human-readable label with its corresponding value.
+    /// <para>
+    /// This method is used by presentation layers (e.g., console applications) to
+    /// dynamically render group properties without hardcoding attribute names or labels.
+    /// Empty member arrays are formatted as "(no members)" for clarity.
+    /// </para>
+    /// </summary>
+    /// <param name="dto">
+    /// The <see cref="GroupDto"/> instance returned by <see cref="Map"/>. Must not be null.
+    /// </param>
+    /// <returns>
+    /// A dictionary with keys "Display Name" and "Members", and their corresponding values.
+    /// The Members value is a comma-separated list of display names, or "(no members)" if empty.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is null.</exception>
+    public Dictionary<string, string> GetDisplayValues(GroupDto dto)
+    {
+        // Validate that the DTO is not null.
+        ArgumentNullException.ThrowIfNull(dto);
+
+        // Build the display dictionary.
+        // Members are joined as a comma-separated string, or shown as "(no members)" if empty.
+        var membersDisplay = dto.Members.Length > 0
+            ? string.Join(", ", dto.Members)
+            : "(no members)";
+
+        return new Dictionary<string, string>
+        {
+            { "Display Name", dto.DisplayName },
+            { "Members", membersDisplay },
+        };
     }
 }

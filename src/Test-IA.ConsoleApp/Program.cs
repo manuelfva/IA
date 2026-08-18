@@ -41,6 +41,10 @@ public class Program
         services.AddSingleton<ILoggerService>(sp => new LoggingService(loggerFactory.CreateLogger<LoggingService>()));
         services.AddTestIAServices();
 
+        // Register attribute mappers as singletons (stateless, no external dependencies)
+        services.AddSingleton<IAttributeMapper<UserDto>, UserAttributeMapper>();
+        services.AddSingleton<IAttributeMapper<GroupDto>, GroupAttributeMapper>();
+
         // Register configuration-based services
         services.Configure<AuthorizationSettings>(configuration.GetSection("Authorization"));
 
@@ -55,6 +59,8 @@ public class Program
         using var serviceProvider = services.BuildServiceProvider();
 
         var loggerService = serviceProvider.GetRequiredService<ILoggerService>();
+        var userMapper = serviceProvider.GetRequiredService<IAttributeMapper<UserDto>>();
+        var groupMapper = serviceProvider.GetRequiredService<IAttributeMapper<GroupDto>>();
         var userInfoService = serviceProvider.GetRequiredService<IGetADUserInfo>();
         var groupInfoService = serviceProvider.GetRequiredService<IGetADGroupInfo>();
         var authorizationService = serviceProvider.GetRequiredService<IUserGroupAuthorizationService>();
@@ -106,10 +112,14 @@ public class Program
             loggerService.LogInformation("Calling GetADUserInfo with samAccountName: {SamAccountName}", userSamAccountName);
             var userInfo = userInfoService.GetUser(userSamAccountName);
             loggerService.LogInformation("User found:");
-            loggerService.LogInformation("  DisplayName: {DisplayName}", userInfo.DisplayName);
-            loggerService.LogInformation("  EmployeeID: {EmployeeId}", userInfo.EmployeeId ?? "(not set)");
-            loggerService.LogInformation("  Mail: {Mail}", userInfo.Mail ?? "(not set)");
-            loggerService.LogInformation("  UPN: {UserPrincipalName}", userInfo.UserPrincipalName ?? "(not set)");
+
+            // Dynamically render user attributes using the mapper's GetDisplayValues method.
+            // This avoids hardcoding attribute names and labels in the console app.
+            var userDisplayValues = userMapper.GetDisplayValues(userInfo);
+            foreach (var kvp in userDisplayValues)
+            {
+                loggerService.LogInformation("  {Key}: {Value}", kvp.Key, kvp.Value);
+            }
         }
         catch (UserNotFoundException ex)
         {
@@ -129,11 +139,13 @@ public class Program
             loggerService.LogInformation("Calling GetADGroupInfo with samAccountName: {SamAccountName}", groupSamAccountName);
             var groupInfo = groupInfoService.GetGroup(groupSamAccountName);
             loggerService.LogInformation("Group found:");
-            loggerService.LogInformation("  DisplayName: {DisplayName}", groupInfo.DisplayName);
-            loggerService.LogInformation("  Members ({Count}):", groupInfo.Members.Length);
-            foreach (var member in groupInfo.Members)
+
+            // Dynamically render group attributes using the mapper's GetDisplayValues method.
+            // This avoids hardcoding attribute names and labels in the console app.
+            var groupDisplayValues = groupMapper.GetDisplayValues(groupInfo);
+            foreach (var kvp in groupDisplayValues)
             {
-                loggerService.LogInformation("    - {Member}", member);
+                loggerService.LogInformation("  {Key}: {Value}", kvp.Key, kvp.Value);
             }
         }
         catch (GroupNotFoundException ex)

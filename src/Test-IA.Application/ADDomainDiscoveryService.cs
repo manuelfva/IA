@@ -36,6 +36,16 @@ public class ADDomainDiscoveryService
     private readonly ILogger<ADDomainDiscoveryService> _logger;
 
     /// <summary>
+    /// Cached discovery result. The first successful call to <see cref="Discover"/> populates this field;
+    /// subsequent calls return the cached value without performing another LDAP discovery.
+    /// <para>
+    /// This prevents redundant Active Directory queries when multiple services (authorization, user lookup,
+    /// group lookup) all require the domain, DC, and Base DN within the same application lifetime.
+    /// </para>
+    /// </summary>
+    private (string DomainName, string DomainController, string BaseDN)? _cachedResult;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ADDomainDiscoveryService"/> class.
     /// </summary>
     /// <param name="logger">
@@ -69,6 +79,14 @@ public class ADDomainDiscoveryService
     /// </exception>
     public virtual (string DomainName, string DomainController, string BaseDN) Discover()
     {
+        // Return cached result if discovery has already been performed successfully.
+        // This prevents redundant LDAP queries when multiple services (authorization, user lookup,
+        // group lookup) all require the domain, DC, and Base DN within the same application lifetime.
+        if (_cachedResult.HasValue)
+        {
+            return _cachedResult.Value;
+        }
+
         // Log the start of the discovery process for observability.
         _logger.LogInformation("Starting Active Directory environment discovery.");
 
@@ -83,6 +101,9 @@ public class ADDomainDiscoveryService
         // Step 3: Query the Domain Controller's RootDSE to obtain the LDAP Base DN.
         var baseDN = GetBaseDN(domainController);
         _logger.LogInformation("Discovered Base DN: {BaseDN}", baseDN);
+
+        // Cache the successful result for subsequent calls.
+        _cachedResult = (domain.Name, domainController, baseDN);
 
         // Return all discovered values as a single tuple.
         return (domain.Name, domainController, baseDN);

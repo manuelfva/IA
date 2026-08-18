@@ -23,4 +23,6 @@ public interface IGetADUserInfo
 /// <param name="EmployeeId">The user's employee ID (nullable if not set).</param>
 /// <param name="Mail">The user's email address (nullable if not set).</param>
 /// <param name="UserPrincipalName">The user's principal name (UPN) (nullable if not set).</param>
-public record UserDto(string DisplayName, string? EmployeeId, string? Mail, string? UserPrincipalName);
+/// <param name="Info">The user's description/info attribute (nullable if not set).</param>
+/// <param name="Mobile">The user's mobile phone number (nullable if not set).</param>
+public record UserDto(string DisplayName, string? EmployeeId, string? Mail, string? UserPrincipalName, string? Info, string? Mobile);
