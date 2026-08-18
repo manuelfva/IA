@@ -54,9 +54,9 @@ graph TB
 | Layer | Responsibility |
 |---|---|
 | **Domain** | Service interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`, `IUserWriter`), DTOs (`UserDto`, `GroupDto`), and domain exceptions (`DomainException`, `AccessDeniedException`, `MissingGroupException`) |
-| **Application** | Service implementations, Active Directory discovery, LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping |
+| **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
-| **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations |
+| **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations with dynamic attribute display via `GetDisplayValues()` |
 | **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface for AD lookups |
 
 ## Projects
@@ -76,7 +76,7 @@ graph TB
 
 Retrieves Active Directory user information by `samAccountName`.
 
-**Returns:** `UserDto` with `DisplayName`, `EmployeeId`, `Mail`, `UserPrincipalName`
+**Returns:** `UserDto` with `DisplayName`, `EmployeeId`, `Mail`, `UserPrincipalName`, `Info`, and `Mobile`
 
 ### IGetADGroupInfo
 
@@ -211,4 +211,4 @@ Test-IA/
 
 ## Last Updated
 
-18/08/2026 11:02
+18/08/2026 12:49
