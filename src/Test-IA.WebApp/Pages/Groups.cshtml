@@ -1,0 +1,64 @@
+﻿@page
+@model TestIA.WebApp.Pages.GroupsModel
+@{
+    ViewData["Title"] = "Test-IA - Groups Management";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <a href="/" class="back-link">&#8592; Back to Home</a>
+    <h1>Groups Management</h1>
+</div>
+
+<!-- Error Alert -->
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-error">
+        <span class="alert-icon">&#9888;</span>
+        <div><strong>Error:</strong> @Model.Error</div>
+    </div>
+}
+
+<form method="post">
+    <!-- ============================================
+         GROUP SEARCH SECTION
+         ============================================ -->
+    <section class="form-section">
+        <div class="search-card">
+            <div class="card-header">
+                <div class="card-header-icon group">&#128101;</div>
+                <div>
+                    <h2>Search Group</h2>
+                    <p class="card-description">Find group details by samAccountName</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="GroupSearchTerm">samAccountName <span class="label-hint">— e.g. employees of MADRID</span></label>
+                    <input type="text" id="GroupSearchTerm" name="GroupSearchTerm"
+                           value="@Model.GroupSearchTerm" placeholder="Enter group samAccountName" />
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" name="Action" value="SearchGroup" class="btn btn-secondary">
+                    <span>&#128269;</span> Search Group
+                </button>
+            </div>
+
+            @if (Model.GroupResult != null)
+            {
+                <div class="result-section">
+                    <h3>Group Information <span class="result-badge">Found</span></h3>
+                    <div class="result-table">
+                        <table>
+                            @foreach (var kvp in Model.GroupDisplayValues!)
+                            {
+                                <tr><th>@kvp.Key</th><td>@kvp.Value</td></tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+</form>

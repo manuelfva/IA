@@ -31,6 +31,7 @@
   - **Windows Authentication**: `AddNegotiate()` for Kerberos/NTLM.
   - **Policy-based authorization**: `AddPolicy("RequiredGroup")` with `GroupAuthorizationHandler` using `IServiceScopeFactory` for scoped service resolution.
   - `[Authorize(Policy = "RequiredGroup")]` applied to Index page.
+  - **Dedicated Users.cshtml Razor Page**: Separated Users management into its own page with shared `_Layout.cshtml` using `@RenderBody()`. Update User section always renders all 9 attribute textboxes (Info, Mobile, Street Address, City, State, Postal Code, Department, Title, Phone Number) using `[BindProperty]` model values. samAccountName field positioned as first row in the 2-column `.update-form` grid with `.form-group--full` class for proper visual sizing.
 - **Tests**: Unit tests for both services and logging project using xUnit, NSubstitute, and FluentAssertions. Total 22 tests passing. Test constructors updated to inject mappers.
 - **Project files**: All `.csproj` files correctly configured with proper references and packages.
 - **Solution file**: `Test-IA.slnx` has been regenerated and includes all 6 projects (4 source + 1 test + 1 WebApp).

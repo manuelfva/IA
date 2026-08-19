@@ -1,0 +1,169 @@
+﻿@page
+@model TestIA.WebApp.Pages.UsersModel
+@{
+    ViewData["Title"] = "Test-IA - Users Management";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <a href="/" class="back-link">&#8592; Back to Home</a>
+    <h1>Users Management</h1>
+</div>
+
+<!-- Error Alert -->
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-error">
+        <span class="alert-icon">&#9888;</span>
+        <div><strong>Error:</strong> @Model.Error</div>
+    </div>
+}
+
+<form method="post">
+    <!-- ============================================
+         USER SEARCH SECTION
+         ============================================ -->
+    <section class="form-section">
+        <div class="search-card">
+            <div class="card-header">
+                <div class="card-header-icon user">&#128100;</div>
+                <div>
+                    <h2>Search User</h2>
+                    <p class="card-description">Find user details by samAccountName</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="UserSearchTerm">samAccountName <span class="label-hint">— e.g. MFVA649T</span></label>
+                    <input type="text" id="UserSearchTerm" name="UserSearchTerm"
+                           value="@Model.UserSearchTerm" placeholder="Enter user samAccountName" />
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" name="Action" value="SearchUser" class="btn btn-primary">
+                    <span>&#128269;</span> Search User
+                </button>
+            </div>
+
+            @if (Model.UserResult != null)
+            {
+                <div class="result-section">
+                    <h3>User Information <span class="result-badge">Found</span></h3>
+                    <div class="result-table">
+                        <table>
+                            @foreach (var kvp in Model.UserDisplayValues!)
+                            {
+                                <tr><th>@kvp.Key</th><td>@kvp.Value</td></tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- ============================================
+         USER UPDATE SECTION
+         ============================================ -->
+    <section class="form-section">
+        <div class="search-card search-card--update">
+            <div class="card-header">
+                <div class="card-header-icon update">&#9998;</div>
+                <div>
+                    <h2>Update User</h2>
+                    <p class="card-description">Modify user attributes in Active Directory</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="update-form">
+                    <div class="form-group form-group--full">
+                        <label for="UserUpdateSamAccountName">samAccountName <span class="label-hint">— required</span></label>
+                        <input type="text" id="UserUpdateSamAccountName" name="UserUpdateSamAccountName"
+                               value="@Model.UserUpdateSamAccountName" placeholder="Enter user samAccountName to update" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdateInfo">Info</label>
+                        <input type="text" id="UpdateInfo" name="UpdateInfo"
+                               value="@(Model.UpdateInfo ?? string.Empty)"
+                               placeholder="Enter Info" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdateMobile">Mobile</label>
+                        <input type="text" id="UpdateMobile" name="UpdateMobile"
+                               value="@(Model.UpdateMobile ?? string.Empty)"
+                               placeholder="Enter Mobile" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdateStreetAddress">Street Address</label>
+                        <input type="text" id="UpdateStreetAddress" name="UpdateStreetAddress"
+                               value="@(Model.UpdateStreetAddress ?? string.Empty)"
+                               placeholder="Enter Street Address" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdateCity">City</label>
+                        <input type="text" id="UpdateCity" name="UpdateCity"
+                               value="@(Model.UpdateCity ?? string.Empty)"
+                               placeholder="Enter City" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdateState">State</label>
+                        <input type="text" id="UpdateState" name="UpdateState"
+                               value="@(Model.UpdateState ?? string.Empty)"
+                               placeholder="Enter State" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdatePostalCode">Postal Code</label>
+                        <input type="text" id="UpdatePostalCode" name="UpdatePostalCode"
+                               value="@(Model.UpdatePostalCode ?? string.Empty)"
+                               placeholder="Enter Postal Code" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdateDepartment">Department</label>
+                        <input type="text" id="UpdateDepartment" name="UpdateDepartment"
+                               value="@(Model.UpdateDepartment ?? string.Empty)"
+                               placeholder="Enter Department" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdateTitle">Title</label>
+                        <input type="text" id="UpdateTitle" name="UpdateTitle"
+                               value="@(Model.UpdateTitle ?? string.Empty)"
+                               placeholder="Enter Title" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UpdatePhoneNumber">Phone Number</label>
+                        <input type="text" id="UpdatePhoneNumber" name="UpdatePhoneNumber"
+                               value="@(Model.UpdatePhoneNumber ?? string.Empty)"
+                               placeholder="Enter Phone Number" />
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" name="Action" value="UpdateUser" class="btn btn-warning">
+                    <span>&#9998;</span> Update User
+                </button>
+            </div>
+
+            @if (Model.UserUpdateResult != null)
+            {
+                if (Model.UserUpdateResult.Success)
+                {
+                    <div class="result-section">
+                        <h3>Update Result <span class="result-badge">Success</span></h3>
+                        <div class="result-table">
+                            <table>
+                                <tr><th>Status</th><td>@Model.UserUpdateResult.Message</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-error">
+                        <span class="alert-icon">&#9888;</span>
+                        <div><strong>Update Failed:</strong> @Model.UserUpdateResult.Message</div>
+                    </div>
+                }
+            }
+        </div>
+    </section>
+</form>
