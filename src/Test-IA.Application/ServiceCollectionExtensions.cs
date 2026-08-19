@@ -68,6 +68,9 @@ public static class ServiceCollectionExtensions
         // Register the user writer service, mapped to its interface.
         services.AddScoped<IUserWriter, UserWriterService>();
 
+        // Register the user update attribute mapper, mapped to its interface.
+        services.AddScoped<IAttributeMapper<UserUpdateRequest>, UserUpdateAttributeMapper>();
+
         // Return the service collection for chaining.
         return services;
     }

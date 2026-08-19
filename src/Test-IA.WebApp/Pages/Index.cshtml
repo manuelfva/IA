@@ -126,25 +126,81 @@
                     <div class="card-header-icon update">&#9998;</div>
                     <div>
                         <h2>Update User</h2>
-                        <p class="card-description">Modify user 'info' and 'mobile' attributes</p>
+                        <p class="card-description">Modify user attributes via LDAP</p>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="form-group">
-                        <label for="UserUpdateSamAccountName">samAccountName <span class="label-hint">— e.g. MFVA649T</span></label>
-                        <input type="text" id="UserUpdateSamAccountName" name="UserUpdateSamAccountName"
-                               value="@(Model?.UserUpdateSamAccountName ?? string.Empty)" placeholder="Enter user samAccountName" />
-                    </div>
-                    <div class="form-group">
-                        <label for="UpdateInfo">Info <span class="label-hint">— optional</span></label>
-                        <input type="text" id="UpdateInfo" name="UpdateInfo"
-                               value="@(Model?.UpdateInfo ?? string.Empty)" placeholder="Enter info value" />
-                    </div>
-                    <div class="form-group">
-                        <label for="UpdateMobile">Mobile <span class="label-hint">— optional</span></label>
-                        <input type="text" id="UpdateMobile" name="UpdateMobile"
-                               value="@(Model?.UpdateMobile ?? string.Empty)" placeholder="Enter mobile number" />
-                    </div>
+                    @if (Model?.UpdateDisplayValues != null)
+                    {
+                        <!-- Dynamic form fields rendered from the attribute mapper -->
+                        @foreach (var kvp in Model.UpdateDisplayValues)
+                        {
+                            // Skip samAccountName from the display loop — it has its own dedicated field.
+                            if (kvp.Key == "samAccountName") continue;
+
+                            // Only show fields that have a value set.
+                            if (kvp.Value == "(not set)") continue;
+
+                            <div class="form-group">
+                                <label for="Update_@kvp.Key">@kvp.Key <span class="label-hint">— @kvp.Value</span></label>
+                                <input type="text" id="Update_@kvp.Key" name="@kvp.Key" value="@kvp.Value" readonly />
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Default form fields when no update has been performed yet -->
+                        <div class="form-group">
+                            <label for="UserUpdateSamAccountName">samAccountName <span class="label-hint">— e.g. MFVA649T</span></label>
+                            <input type="text" id="UserUpdateSamAccountName" name="UserUpdateSamAccountName"
+                                   value="@(Model?.UserUpdateSamAccountName ?? string.Empty)" placeholder="Enter user samAccountName" />
+                        </div>
+                        <div class="form-group">
+                            <label for="UpdateInfo">Info <span class="label-hint">— optional</span></label>
+                            <input type="text" id="UpdateInfo" name="UpdateInfo"
+                                   value="@(Model?.UpdateInfo ?? string.Empty)" placeholder="Enter info value" />
+                        </div>
+                        <div class="form-group">
+                            <label for="UpdateMobile">Mobile <span class="label-hint">— optional</span></label>
+                            <input type="text" id="UpdateMobile" name="UpdateMobile"
+                                   value="@(Model?.UpdateMobile ?? string.Empty)" placeholder="Enter mobile number" />
+                        </div>
+                        <div class="form-group">
+                            <label for="UpdateStreetAddress">Street Address <span class="label-hint">— optional</span></label>
+                            <input type="text" id="UpdateStreetAddress" name="UpdateStreetAddress"
+                                   value="@(Model?.UpdateStreetAddress ?? string.Empty)" placeholder="Enter street address" />
+                        </div>
+                        <div class="form-group">
+                            <label for="UpdateCity">City <span class="label-hint">— optional</span></label>
+                            <input type="text" id="UpdateCity" name="UpdateCity"
+                                   value="@(Model?.UpdateCity ?? string.Empty)" placeholder="Enter city" />
+                        </div>
+                        <div class="form-group">
+                            <label for="UpdateState">State <span class="label-hint">— optional</span></label>
+                            <input type="text" id="UpdateState" name="UpdateState"
+                                   value="@(Model?.UpdateState ?? string.Empty)" placeholder="Enter state" />
+                        </div>
+                        <div class="form-group">
+                            <label for="UpdatePostalCode">Postal Code <span class="label-hint">— optional</span></label>
+                            <input type="text" id="UpdatePostalCode" name="UpdatePostalCode"
+                                   value="@(Model?.UpdatePostalCode ?? string.Empty)" placeholder="Enter postal code" />
+                        </div>
+                        <div class="form-group">
+                            <label for="UpdateDepartment">Department <span class="label-hint">— optional</span></label>
+                            <input type="text" id="UpdateDepartment" name="UpdateDepartment"
+                                   value="@(Model?.UpdateDepartment ?? string.Empty)" placeholder="Enter department" />
+                        </div>
+                        <div class="form-group">
+                            <label for="UpdateTitle">Title <span class="label-hint">— optional</span></label>
+                            <input type="text" id="UpdateTitle" name="UpdateTitle"
+                                   value="@(Model?.UpdateTitle ?? string.Empty)" placeholder="Enter title" />
+                        </div>
+                        <div class="form-group">
+                            <label for="UpdatePhoneNumber">Phone Number <span class="label-hint">— optional</span></label>
+                            <input type="text" id="UpdatePhoneNumber" name="UpdatePhoneNumber"
+                                   value="@(Model?.UpdatePhoneNumber ?? string.Empty)" placeholder="Enter phone number" />
+                        </div>
+                    }
                 </div>
                 <div class="card-footer">
                     <button type="submit" name="SearchAction" value="Update" class="btn btn-update">

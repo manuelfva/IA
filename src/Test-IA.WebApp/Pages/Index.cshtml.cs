@@ -21,6 +21,7 @@ public class IndexModel : PageModel
     private readonly ILoggerService _logger;
     private readonly IAttributeMapper<UserDto> _userMapper;
     private readonly IAttributeMapper<GroupDto> _groupMapper;
+    private readonly IAttributeMapper<UserUpdateRequest> _updateMapper;
 
     /// <summary>
     /// Initializes a new instance of the IndexModel class.
@@ -31,13 +32,15 @@ public class IndexModel : PageModel
     /// <param name="logger">The logging service.</param>
     /// <param name="userMapper">The user attribute mapper for dynamic display rendering.</param>
     /// <param name="groupMapper">The group attribute mapper for dynamic display rendering.</param>
+    /// <param name="updateMapper">The user update attribute mapper for dynamic display rendering.</param>
     public IndexModel(
         IGetADUserInfo userInfoService,
         IGetADGroupInfo groupInfoService,
         IUserWriter userWriter,
         ILoggerService logger,
         IAttributeMapper<UserDto> userMapper,
-        IAttributeMapper<GroupDto> groupMapper)
+        IAttributeMapper<GroupDto> groupMapper,
+        IAttributeMapper<UserUpdateRequest> updateMapper)
     {
         _userInfoService = userInfoService ?? throw new ArgumentNullException(nameof(userInfoService));
         _groupInfoService = groupInfoService ?? throw new ArgumentNullException(nameof(groupInfoService));
@@ -45,6 +48,7 @@ public class IndexModel : PageModel
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _userMapper = userMapper ?? throw new ArgumentNullException(nameof(userMapper));
         _groupMapper = groupMapper ?? throw new ArgumentNullException(nameof(groupMapper));
+        _updateMapper = updateMapper ?? throw new ArgumentNullException(nameof(updateMapper));
     }
 
     /// <summary>
@@ -109,9 +113,56 @@ public class IndexModel : PageModel
     public string? UpdateMobile { get; set; }
 
     /// <summary>
+    /// The new value for the 'streetAddress' attribute.
+    /// </summary>
+    [BindProperty]
+    public string? UpdateStreetAddress { get; set; }
+
+    /// <summary>
+    /// The new value for the 'l' (city) attribute.
+    /// </summary>
+    [BindProperty]
+    public string? UpdateCity { get; set; }
+
+    /// <summary>
+    /// The new value for the 'st' (state) attribute.
+    /// </summary>
+    [BindProperty]
+    public string? UpdateState { get; set; }
+
+    /// <summary>
+    /// The new value for the 'postalCode' attribute.
+    /// </summary>
+    [BindProperty]
+    public string? UpdatePostalCode { get; set; }
+
+    /// <summary>
+    /// The new value for the 'department' attribute.
+    /// </summary>
+    [BindProperty]
+    public string? UpdateDepartment { get; set; }
+
+    /// <summary>
+    /// The new value for the 'title' attribute.
+    /// </summary>
+    [BindProperty]
+    public string? UpdateTitle { get; set; }
+
+    /// <summary>
+    /// The new value for the 'telephoneNumber' attribute.
+    /// </summary>
+    [BindProperty]
+    public string? UpdatePhoneNumber { get; set; }
+
+    /// <summary>
     /// The result of the user update operation.
     /// </summary>
     public UserUpdateResult? UpdateResult { get; set; }
+
+    /// <summary>
+    /// Dynamic display values for the update request, populated by <see cref="IAttributeMapper{TDto}.GetDisplayValues"/>.
+    /// </summary>
+    public Dictionary<string, string>? UpdateDisplayValues { get; set; }
 
     /// <summary>
     /// Handles all POST requests. Determines whether to search for a user, a group, or update a user
@@ -184,28 +235,43 @@ public class IndexModel : PageModel
                 return Page();
             }
 
-            if (string.IsNullOrWhiteSpace(UpdateInfo) && string.IsNullOrWhiteSpace(UpdateMobile))
+            // Build the update request with all 10 attributes (only non-null values will be applied).
+            var request = new UserUpdateRequest(
+                SamAccountName: UserUpdateSamAccountName,
+                Info: UpdateInfo,
+                Mobile: UpdateMobile,
+                StreetAddress: UpdateStreetAddress,
+                City: UpdateCity,
+                State: UpdateState,
+                PostalCode: UpdatePostalCode,
+                Department: UpdateDepartment,
+                Title: UpdateTitle,
+                PhoneNumber: UpdatePhoneNumber);
+
+            // Check if at least one attribute has a value.
+            bool hasAnyValue = !string.IsNullOrWhiteSpace(request.Info)
+                            || !string.IsNullOrWhiteSpace(request.Mobile)
+                            || !string.IsNullOrWhiteSpace(request.StreetAddress)
+                            || !string.IsNullOrWhiteSpace(request.City)
+                            || !string.IsNullOrWhiteSpace(request.State)
+                            || !string.IsNullOrWhiteSpace(request.PostalCode)
+                            || !string.IsNullOrWhiteSpace(request.Department)
+                            || !string.IsNullOrWhiteSpace(request.Title)
+                            || !string.IsNullOrWhiteSpace(request.PhoneNumber);
+
+            if (!hasAnyValue)
             {
-                Error = "Please enter at least one attribute value (info or mobile) to update.";
+                Error = "Please enter at least one attribute value to update.";
                 return Page();
             }
 
             try
             {
-                var request = new UserUpdateRequest(
-                    SamAccountName: UserUpdateSamAccountName,
-                    Info: UpdateInfo,
-                    Mobile: UpdateMobile,
-                    StreetAddress: null,
-                    City: null,
-                    State: null,
-                    PostalCode: null,
-                    Department: null,
-                    Title: null,
-                    PhoneNumber: null);
-
                 UpdateResult = _userWriter.UpdateUser(request);
                 Error = null;
+
+                // Populate dynamic display values using the attribute mapper.
+                UpdateDisplayValues = _updateMapper.GetDisplayValues(request);
 
                 if (!UpdateResult.Success)
                 {
@@ -219,12 +285,14 @@ public class IndexModel : PageModel
             catch (UserNotFoundException ex)
             {
                 UpdateResult = null;
+                UpdateDisplayValues = null;
                 _logger.LogError("User not found for update: {SamAccountName}", UserUpdateSamAccountName);
                 Error = ex.Message;
             }
             catch (DomainException ex)
             {
                 UpdateResult = null;
+                UpdateDisplayValues = null;
                 _logger.LogError(ex, "Error updating user {SamAccountName}", UserUpdateSamAccountName);
                 Error = $"Error updating user: {ex.Message}";
             }

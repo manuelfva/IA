@@ -8,11 +8,12 @@
   - `IAttributeMapper<TDto>` — generic interface for LDAP-to-DTO mapping (Application layer).
   - `UserAttributeMapper` — implements `IAttributeMapper<UserDto>`, maps 4 LDAP attributes.
   - `GroupAttributeMapper` — implements `IAttributeMapper<GroupDto>`, maps `displayName` + `member` DN array.
+  - `UserUpdateAttributeMapper` — implements `IAttributeMapper<UserUpdateRequest>`, maps all 10 user update attributes (SamAccountName, Info, Mobile, StreetAddress, City, State, PostalCode, Department, Title, PhoneNumber).
   - `GetADUserInfoService` — LDAP user search with safe filter escaping, uses `IAttributeMapper<UserDto>`.
   - `GetADGroupInfoService` — LDAP group search with safe filter escaping, uses `IAttributeMapper<GroupDto>`.
   - `ResolveMemberDisplayNamesAsync` — resolves each group member's Distinguished Name to its `displayName` attribute via LDAP searches.
   - `LdapFilterHelper` — LDAP special character escaping utility.
-  - `ServiceCollectionExtensions` — DI registration extension method (includes mapper registrations).
+  - `ServiceCollectionExtensions` — DI registration extension method (includes all mapper registrations).
   - `UserGroupAuthorizationService` — checks if current Windows user is member of configured AD group via LDAP. Throws `MissingGroupException` if group not found.
   - `AuthorizationSettings` — strongly-typed configuration class bound to `Authorization` section in `appsettings.json`.
   - `ILoggerService` interface and `LoggingService` implementation with XML documentation. Added `LogError(Exception, string, params object?[])` overload.
@@ -20,11 +21,11 @@
 - **ConsoleApp authorization**: Configurable group name via `appsettings.json` (`Authorization.RequiredGroup`). Fails fast with clear error messages — `MissingGroupException` (group not found), `AccessDeniedException` (user not member), or `DomainException` (LDAP error).
 - **ConsoleApp**: `Program.cs` with full DI setup, real service execution, structured output via `ILoggerService`.
 - **WebApp**: ASP.NET Core Razor Pages application with:
-  - `IndexModel` page model with `OnPost()` handling both user and group searches.
+  - `IndexModel` page model with `OnPost()` handling user, group, and user update operations.
   - `launchSettings.json` with HTTP/HTTPS URLs.
   - Conditional `UseHttpsRedirection()` for Development mode.
   - `ILoggerService` injected into `IndexModel` for error logging.
-  - **Dynamic display**: `IAttributeMapper<UserDto>` and `IAttributeMapper<GroupDto>` injected; `UserDisplayValues` and `GroupDisplayValues` properties populated in `OnPost()`; `Index.cshtml` uses `@foreach` loops over display dictionaries.
+  - **Dynamic display**: `IAttributeMapper<UserDto>`, `IAttributeMapper<GroupDto>`, and `IAttributeMapper<UserUpdateRequest>` injected; `UserDisplayValues`, `GroupDisplayValues`, and `UpdateDisplayValues` properties populated in `OnPost()`; `Index.cshtml` uses `@foreach` loops over display dictionaries for all three operations. User Update card now supports all 10 LDAP attributes with dynamic form field rendering.
   - **Glassmorphism + Aurora UI**: Dark theme, animated aurora background, frosted glass components, gradient text, luminous buttons.
   - CSS custom properties, `backdrop-filter: blur()`, `@keyframes` animations.
   - **Windows Authentication**: `AddNegotiate()` for Kerberos/NTLM.
@@ -65,3 +66,4 @@ The codebase is complete with both ConsoleApp and WebApp presentation layers, At
 - **Decision**: AD Discovery Caching — `ADDomainDiscoveryService.Discover()` caches its result internally after the first successful call. This eliminates duplicate LDAP queries when multiple services (authorization, user lookup, group lookup) all require the domain, DC, and Base DN. The cache is instance-level (not static), so each DI-scoped instance caches independently. Tests remain unaffected because `ThrowingADDomainDiscoveryService` overrides `Discover()`.
 - **Decision**: Dynamic Console Display — ConsoleApp uses `IAttributeMapper.GetDisplayValues()` to render attributes dynamically via `foreach` loops instead of hardcoded `LogInformation` calls. Adding new attributes only requires updating the mapper, not the console app.
 - **Decision**: Dynamic WebApp Display — WebApp `Index.cshtml` uses `@foreach` loops over `Model.UserDisplayValues` and `Model.GroupDisplayValues` instead of hardcoded HTML table rows. Both ConsoleApp and WebApp share the same `GetDisplayValues()` pattern, ensuring consistent dynamic rendering across all presentation layers.
+- **Decision**: Dynamic WebApp User Update Display — WebApp User Update card uses `IAttributeMapper<UserUpdateRequest>.GetDisplayValues()` to render form fields dynamically. The `UserUpdateAttributeMapper` handles all 10 user update attributes (SamAccountName, Info, Mobile, StreetAddress, City, State, PostalCode, Department, Title, PhoneNumber). Adding new update attributes only requires updating the mapper, not the Razor page. All presentation layers (ConsoleApp, WebApp User, WebApp Group, WebApp Update) now use the same `GetDisplayValues()` pattern for consistent dynamic rendering.

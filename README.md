@@ -54,10 +54,10 @@ graph TB
 | Layer | Responsibility |
 |---|---|
 | **Domain** | Service interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`, `IUserWriter`), DTOs (`UserDto`, `GroupDto`), and domain exceptions (`DomainException`, `AccessDeniedException`, `MissingGroupException`) |
-| **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering |
+| **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering. Includes `UserAttributeMapper`, `GroupAttributeMapper`, and `UserUpdateAttributeMapper`. |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
 | **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations with dynamic attribute display via `GetDisplayValues()` |
-| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()`, Glassmorphism + Aurora UI |
+| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()` for User, Group, and Update operations. User Update card supports all 10 LDAP attributes with dynamic form field rendering. Glassmorphism + Aurora UI |
 
 ## Projects
 
@@ -108,6 +108,7 @@ All services are registered via `ServiceCollectionExtensions.AddTestIAServices()
 - `IGetADGroupInfo` / `GetADGroupInfoService` → Scoped
 - `IUserGroupAuthorizationService` / `UserGroupAuthorizationService` → Scoped
 - `IUserWriter` / `UserWriterService` → Scoped
+- `IAttributeMapper<UserUpdateRequest>` / `UserUpdateAttributeMapper` → Scoped
 
 ## Configuration
 
@@ -211,4 +212,4 @@ Test-IA/
 
 ## Last Updated
 
-18/08/2026 14:11
+19/08/2026 09:45
