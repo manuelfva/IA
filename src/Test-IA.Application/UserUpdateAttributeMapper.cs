@@ -37,16 +37,16 @@ public class UserUpdateAttributeMapper : IAttributeMapper<UserUpdateRequest>
     /// </summary>
     public static readonly Dictionary<string, string> Attributes = new()
     {
-        { "SamAccountName", "samAccountName" },
-        { "Info", "Info" },
-        { "Mobile", "Mobile" },
-        { "StreetAddress", "Street Address" },
-        { "City", "City" },
-        { "State", "State" },
-        { "PostalCode", "Postal Code" },
-        { "Department", "Department" },
-        { "Title", "Title" },
-        { "PhoneNumber", "Phone Number" },
+        { "sAMAccountName", "samAccountName" },
+        { "info", "Info" },
+        { "mobile", "Mobile" },
+        { "streetAddress", "Street Address" },
+        { "l", "City" },
+        { "st", "State" },
+        { "postalCode", "Postal Code" },
+        { "department", "Department" },
+        { "title", "Title" },
+        { "telephoneNumber", "Phone Number" },
     };
 
     /// <summary>
@@ -80,16 +80,16 @@ public class UserUpdateAttributeMapper : IAttributeMapper<UserUpdateRequest>
         // Map each extracted attribute to the corresponding request field.
         // All fields remain null if not set on the entry except SamAccountName (required).
         return new UserUpdateRequest(
-            SamAccountName: extracted["SamAccountName"] ?? string.Empty,
-            Info: extracted["Info"],
-            Mobile: extracted["Mobile"],
-            StreetAddress: extracted["StreetAddress"],
-            City: extracted["City"],
-            State: extracted["State"],
-            PostalCode: extracted["PostalCode"],
-            Department: extracted["Department"],
-            Title: extracted["Title"],
-            PhoneNumber: extracted["PhoneNumber"]);
+            SamAccountName: extracted["sAMAccountName"] ?? string.Empty,
+            Info: extracted["info"],
+            Mobile: extracted["mobile"],
+            StreetAddress: extracted["streetAddress"],
+            City: extracted["l"],
+            State: extracted["st"],
+            PostalCode: extracted["postalCode"],
+            Department: extracted["department"],
+            Title: extracted["title"],
+            PhoneNumber: extracted["telephoneNumber"]);
     }
 
     /// <summary>

@@ -67,10 +67,11 @@ This allows the services to be replaced or mocked in tests.
 
 A generic `IAttributeMapper<TDto>` interface in the Application layer centralizes LDAP-to-DTO mapping:
 - `IAttributeMapper<TDto>` — declares `Attributes` dictionary, `Map(SearchResultEntry)` method, and `GetDisplayValues(TDto)` method
-- `UserAttributeMapper` — implements `IAttributeMapper<UserDto>`, maps `displayName`, `employeeID`, `mail`, `userPrincipalName`, `info`, `mobile`
+- `UserAttributeMapper` — implements `IAttributeMapper<UserDto>`, maps 14 LDAP attributes: `displayName`, `employeeID`, `mail`, `userPrincipalName`, `info`, `mobile`, `sAMAccountName`, `streetAddress`, `l` (city), `st` (state), `postalCode`, `department`, `title`, `telephoneNumber`
 - `GroupAttributeMapper` — implements `IAttributeMapper<GroupDto>`, maps `displayName` + `member` DN array
+- `UserUpdateAttributeMapper` — implements `IAttributeMapper<UserUpdateRequest>`, maps 10 user update attributes using correct LDAP attribute names
 
-Mappers are injected via DI into their respective services, replacing the previous static `_attributeNames` dictionaries. This provides a reusable, testable pattern for future DTOs. To add a new DTO, create a new implementation of this interface (e.g., `ComputerAttributeMapper : IAttributeMapper<ComputerDto>`) and register it in DI.
+Mappers are injected via DI into their respective services, replacing the previous static `_attributeNames` dictionaries. This provides a reusable, testable pattern for future DTOs. To add a new DTO, create a new implementation of this interface (e.g., `ComputerAttributeMapper : IAttributeMapper<ComputerDto>`) and register it in DI. The Search User and Update User panels now share the same 14-attribute `GetDisplayValues()` pattern for consistent dynamic rendering.
 
 ### 6. AD Discovery Caching
 
