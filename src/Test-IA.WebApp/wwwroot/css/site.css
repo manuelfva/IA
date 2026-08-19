@@ -273,6 +273,80 @@ body::after {
 
 .alert-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 0.1rem; }
 
+/* ============================================
+   Object Sections (Users vs Groups)
+   ============================================ */
+
+.object-section {
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--glass-border);
+}
+
+.section-header--users {
+    border-bottom-color: var(--accent-purple);
+}
+
+.section-header--groups {
+    border-bottom-color: var(--accent-green);
+}
+
+.section-icon {
+    font-size: 2.5rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+
+.section-header--users .section-icon {
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4), 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.section-header--groups .section-icon {
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4), 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.section-header p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0.25rem 0 0 0;
+}
+
+.section-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
 .search-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

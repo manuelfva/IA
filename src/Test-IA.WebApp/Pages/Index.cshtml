@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model TestIA.WebApp.Pages.IndexModel
 @{
     ViewData["Title"] = "Test-IA - Active Directory Lookup";
@@ -43,194 +43,220 @@
     }
 
     <form method="post">
-        <div class="search-grid">
-            <!-- User Search Card -->
-            <div class="search-card">
-                <div class="card-header">
-                    <div class="card-header-icon user">&#128100;</div>
-                    <div>
-                        <h2>Search User</h2>
-                        <p class="card-description">Find user details by samAccountName</p>
-                    </div>
+        <!-- ============================================
+             USERS SECTION
+             ============================================ -->
+        <section class="object-section">
+            <div class="section-header section-header--users">
+                <span class="section-icon">&#128101;</span>
+                <div>
+                    <h2>Users</h2>
+                    <p>Search and update user attributes in Active Directory</p>
                 </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="UserSearchTerm">samAccountName <span class="label-hint">— e.g. MFVA649T</span></label>
-                        <input type="text" id="UserSearchTerm" name="UserSearchTerm"
-                               value="@Model.UserSearchTerm" placeholder="Enter user samAccountName" />
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <button type="submit" name="SearchAction" value="User" class="btn btn-primary">
-                        <span>&#128269;</span> Search User
-                    </button>
-                </div>
-
-                @if (Model.UserResult != null)
-                {
-                    <div class="result-section">
-                        <h3>User Information <span class="result-badge">Found</span></h3>
-                        <div class="result-table">
-                            <table>
-                                @foreach (var kvp in Model.UserDisplayValues!)
-                                {
-                                    <tr><th>@kvp.Key</th><td>@kvp.Value</td></tr>
-                                }
-                            </table>
-                        </div>
-                    </div>
-                }
             </div>
-
-            <!-- Group Search Card -->
-            <div class="search-card">
-                <div class="card-header">
-                    <div class="card-header-icon group">&#128101;</div>
-                    <div>
-                        <h2>Search Group</h2>
-                        <p class="card-description">Find group details by samAccountName</p>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="GroupSearchTerm">samAccountName <span class="label-hint">— e.g. employees of MADRID</span></label>
-                        <input type="text" id="GroupSearchTerm" name="GroupSearchTerm"
-                               value="@Model.GroupSearchTerm" placeholder="Enter group samAccountName" />
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <button type="submit" name="SearchAction" value="Group" class="btn btn-secondary">
-                        <span>&#128269;</span> Search Group
-                    </button>
-                </div>
-
-                @if (Model.GroupResult != null)
-                {
-                    <div class="result-section">
-                        <h3>Group Information <span class="result-badge">Found</span></h3>
-                        <div class="result-table">
-                            <table>
-                                @foreach (var kvp in Model.GroupDisplayValues!)
-                                {
-                                    <tr><th>@kvp.Key</th><td>@kvp.Value</td></tr>
-                                }
-                            </table>
+            <div class="section-cards">
+                <!-- User Search Card -->
+                <div class="search-card">
+                    <div class="card-header">
+                        <div class="card-header-icon user">&#128100;</div>
+                        <div>
+                            <h2>Search User</h2>
+                            <p class="card-description">Find user details by samAccountName</p>
                         </div>
                     </div>
-                }
-            </div>
-
-            <!-- User Update Card -->
-            <div class="search-card">
-                <div class="card-header">
-                    <div class="card-header-icon update">&#9998;</div>
-                    <div>
-                        <h2>Update User</h2>
-                        <p class="card-description">Modify user attributes via LDAP</p>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="UserSearchTerm">samAccountName <span class="label-hint">— e.g. MFVA649T</span></label>
+                            <input type="text" id="UserSearchTerm" name="UserSearchTerm"
+                                   value="@Model.UserSearchTerm" placeholder="Enter user samAccountName" />
+                        </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    @if (Model?.UpdateDisplayValues != null)
-                    {
-                        <!-- Dynamic form fields rendered from the attribute mapper -->
-                        @foreach (var kvp in Model.UpdateDisplayValues)
-                        {
-                            // Skip samAccountName from the display loop — it has its own dedicated field.
-                            if (kvp.Key == "samAccountName") continue;
+                    <div class="card-footer">
+                        <button type="submit" name="SearchAction" value="User" class="btn btn-primary">
+                            <span>&#128269;</span> Search User
+                        </button>
+                    </div>
 
-                            // Only show fields that have a value set.
-                            if (kvp.Value == "(not set)") continue;
-
-                            <div class="form-group">
-                                <label for="Update_@kvp.Key">@kvp.Key <span class="label-hint">— @kvp.Value</span></label>
-                                <input type="text" id="Update_@kvp.Key" name="@kvp.Key" value="@kvp.Value" readonly />
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <!-- Default form fields when no update has been performed yet -->
-                        <div class="form-group">
-                            <label for="UserUpdateSamAccountName">samAccountName <span class="label-hint">— e.g. MFVA649T</span></label>
-                            <input type="text" id="UserUpdateSamAccountName" name="UserUpdateSamAccountName"
-                                   value="@(Model?.UserUpdateSamAccountName ?? string.Empty)" placeholder="Enter user samAccountName" />
-                        </div>
-                        <div class="form-group">
-                            <label for="UpdateInfo">Info <span class="label-hint">— optional</span></label>
-                            <input type="text" id="UpdateInfo" name="UpdateInfo"
-                                   value="@(Model?.UpdateInfo ?? string.Empty)" placeholder="Enter info value" />
-                        </div>
-                        <div class="form-group">
-                            <label for="UpdateMobile">Mobile <span class="label-hint">— optional</span></label>
-                            <input type="text" id="UpdateMobile" name="UpdateMobile"
-                                   value="@(Model?.UpdateMobile ?? string.Empty)" placeholder="Enter mobile number" />
-                        </div>
-                        <div class="form-group">
-                            <label for="UpdateStreetAddress">Street Address <span class="label-hint">— optional</span></label>
-                            <input type="text" id="UpdateStreetAddress" name="UpdateStreetAddress"
-                                   value="@(Model?.UpdateStreetAddress ?? string.Empty)" placeholder="Enter street address" />
-                        </div>
-                        <div class="form-group">
-                            <label for="UpdateCity">City <span class="label-hint">— optional</span></label>
-                            <input type="text" id="UpdateCity" name="UpdateCity"
-                                   value="@(Model?.UpdateCity ?? string.Empty)" placeholder="Enter city" />
-                        </div>
-                        <div class="form-group">
-                            <label for="UpdateState">State <span class="label-hint">— optional</span></label>
-                            <input type="text" id="UpdateState" name="UpdateState"
-                                   value="@(Model?.UpdateState ?? string.Empty)" placeholder="Enter state" />
-                        </div>
-                        <div class="form-group">
-                            <label for="UpdatePostalCode">Postal Code <span class="label-hint">— optional</span></label>
-                            <input type="text" id="UpdatePostalCode" name="UpdatePostalCode"
-                                   value="@(Model?.UpdatePostalCode ?? string.Empty)" placeholder="Enter postal code" />
-                        </div>
-                        <div class="form-group">
-                            <label for="UpdateDepartment">Department <span class="label-hint">— optional</span></label>
-                            <input type="text" id="UpdateDepartment" name="UpdateDepartment"
-                                   value="@(Model?.UpdateDepartment ?? string.Empty)" placeholder="Enter department" />
-                        </div>
-                        <div class="form-group">
-                            <label for="UpdateTitle">Title <span class="label-hint">— optional</span></label>
-                            <input type="text" id="UpdateTitle" name="UpdateTitle"
-                                   value="@(Model?.UpdateTitle ?? string.Empty)" placeholder="Enter title" />
-                        </div>
-                        <div class="form-group">
-                            <label for="UpdatePhoneNumber">Phone Number <span class="label-hint">— optional</span></label>
-                            <input type="text" id="UpdatePhoneNumber" name="UpdatePhoneNumber"
-                                   value="@(Model?.UpdatePhoneNumber ?? string.Empty)" placeholder="Enter phone number" />
-                        </div>
-                    }
-                </div>
-                <div class="card-footer">
-                    <button type="submit" name="SearchAction" value="Update" class="btn btn-update">
-                        <span>&#9998;</span> Update User
-                    </button>
-                </div>
-
-                @if (Model?.UpdateResult != null)
-                {
-                    @if (Model.UpdateResult.Success)
+                    @if (Model.UserResult != null)
                     {
                         <div class="result-section">
-                            <h3>Update Result <span class="result-badge result-badge-success">Success</span></h3>
+                            <h3>User Information <span class="result-badge">Found</span></h3>
                             <div class="result-table">
                                 <table>
-                                    <tr><th>Status</th><td>@Model.UpdateResult.Message</td></tr>
+                                    @foreach (var kvp in Model.UserDisplayValues!)
+                                    {
+                                        <tr><th>@kvp.Key</th><td>@kvp.Value</td></tr>
+                                    }
                                 </table>
                             </div>
                         </div>
                     }
-                    else
+                </div>
+
+                <!-- User Update Card -->
+                <div class="search-card">
+                    <div class="card-header">
+                        <div class="card-header-icon update">&#9998;</div>
+                        <div>
+                            <h2>Update User</h2>
+                            <p class="card-description">Modify user attributes via LDAP</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if (Model?.UpdateDisplayValues != null)
+                        {
+                            <!-- Dynamic form fields rendered from the attribute mapper -->
+                            @foreach (var kvp in Model.UpdateDisplayValues)
+                            {
+                                // Skip samAccountName from the display loop — it has its own dedicated field.
+                                if (kvp.Key == "samAccountName") continue;
+
+                                // Only show fields that have a value set.
+                                if (kvp.Value == "(not set)") continue;
+
+                                <div class="form-group">
+                                    <label for="Update_@kvp.Key">@kvp.Key <span class="label-hint">— @kvp.Value</span></label>
+                                    <input type="text" id="Update_@kvp.Key" name="@kvp.Key" value="@kvp.Value" readonly />
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <!-- Default form fields when no update has been performed yet -->
+                            <div class="form-group">
+                                <label for="UserUpdateSamAccountName">samAccountName <span class="label-hint">— e.g. MFVA649T</span></label>
+                                <input type="text" id="UserUpdateSamAccountName" name="UserUpdateSamAccountName"
+                                       value="@(Model?.UserUpdateSamAccountName ?? string.Empty)" placeholder="Enter user samAccountName" />
+                            </div>
+                            <div class="form-group">
+                                <label for="UpdateInfo">Info <span class="label-hint">— optional</span></label>
+                                <input type="text" id="UpdateInfo" name="UpdateInfo"
+                                       value="@(Model?.UpdateInfo ?? string.Empty)" placeholder="Enter info value" />
+                            </div>
+                            <div class="form-group">
+                                <label for="UpdateMobile">Mobile <span class="label-hint">— optional</span></label>
+                                <input type="text" id="UpdateMobile" name="UpdateMobile"
+                                       value="@(Model?.UpdateMobile ?? string.Empty)" placeholder="Enter mobile number" />
+                            </div>
+                            <div class="form-group">
+                                <label for="UpdateStreetAddress">Street Address <span class="label-hint">— optional</span></label>
+                                <input type="text" id="UpdateStreetAddress" name="UpdateStreetAddress"
+                                       value="@(Model?.UpdateStreetAddress ?? string.Empty)" placeholder="Enter street address" />
+                            </div>
+                            <div class="form-group">
+                                <label for="UpdateCity">City <span class="label-hint">— optional</span></label>
+                                <input type="text" id="UpdateCity" name="UpdateCity"
+                                       value="@(Model?.UpdateCity ?? string.Empty)" placeholder="Enter city" />
+                            </div>
+                            <div class="form-group">
+                                <label for="UpdateState">State <span class="label-hint">— optional</span></label>
+                                <input type="text" id="UpdateState" name="UpdateState"
+                                       value="@(Model?.UpdateState ?? string.Empty)" placeholder="Enter state" />
+                            </div>
+                            <div class="form-group">
+                                <label for="UpdatePostalCode">Postal Code <span class="label-hint">— optional</span></label>
+                                <input type="text" id="UpdatePostalCode" name="UpdatePostalCode"
+                                       value="@(Model?.UpdatePostalCode ?? string.Empty)" placeholder="Enter postal code" />
+                            </div>
+                            <div class="form-group">
+                                <label for="UpdateDepartment">Department <span class="label-hint">— optional</span></label>
+                                <input type="text" id="UpdateDepartment" name="UpdateDepartment"
+                                       value="@(Model?.UpdateDepartment ?? string.Empty)" placeholder="Enter department" />
+                            </div>
+                            <div class="form-group">
+                                <label for="UpdateTitle">Title <span class="label-hint">— optional</span></label>
+                                <input type="text" id="UpdateTitle" name="UpdateTitle"
+                                       value="@(Model?.UpdateTitle ?? string.Empty)" placeholder="Enter title" />
+                            </div>
+                            <div class="form-group">
+                                <label for="UpdatePhoneNumber">Phone Number <span class="label-hint">— optional</span></label>
+                                <input type="text" id="UpdatePhoneNumber" name="UpdatePhoneNumber"
+                                       value="@(Model?.UpdatePhoneNumber ?? string.Empty)" placeholder="Enter phone number" />
+                            </div>
+                        }
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" name="SearchAction" value="Update" class="btn btn-update">
+                            <span>&#9998;</span> Update User
+                        </button>
+                    </div>
+
+                    @if (Model?.UpdateResult != null)
                     {
-                        <div class="alert alert-error">
-                            <span class="alert-icon">&#9888;</span>
-                            <div><strong>Update Failed:</strong> @Model.UpdateResult.Message</div>
+                        @if (Model.UpdateResult.Success)
+                        {
+                            <div class="result-section">
+                                <h3>Update Result <span class="result-badge result-badge-success">Success</span></h3>
+                                <div class="result-table">
+                                    <table>
+                                        <tr><th>Status</th><td>@Model.UpdateResult.Message</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-error">
+                                <span class="alert-icon">&#9888;</span>
+                                <div><strong>Update Failed:</strong> @Model.UpdateResult.Message</div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             GROUPS SECTION
+             ============================================ -->
+        <section class="object-section">
+            <div class="section-header section-header--groups">
+                <span class="section-icon">&#128101;</span>
+                <div>
+                    <h2>Groups</h2>
+                    <p>Search group information and membership in Active Directory</p>
+                </div>
+            </div>
+            <div class="section-cards">
+                <!-- Group Search Card -->
+                <div class="search-card">
+                    <div class="card-header">
+                        <div class="card-header-icon group">&#128101;</div>
+                        <div>
+                            <h2>Search Group</h2>
+                            <p class="card-description">Find group details by samAccountName</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="GroupSearchTerm">samAccountName <span class="label-hint">— e.g. employees of MADRID</span></label>
+                            <input type="text" id="GroupSearchTerm" name="GroupSearchTerm"
+                                   value="@Model.GroupSearchTerm" placeholder="Enter group samAccountName" />
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" name="SearchAction" value="Group" class="btn btn-secondary">
+                            <span>&#128269;</span> Search Group
+                        </button>
+                    </div>
+
+                    @if (Model.GroupResult != null)
+                    {
+                        <div class="result-section">
+                            <h3>Group Information <span class="result-badge">Found</span></h3>
+                            <div class="result-table">
+                                <table>
+                                    @foreach (var kvp in Model.GroupDisplayValues!)
+                                    {
+                                        <tr><th>@kvp.Key</th><td>@kvp.Value</td></tr>
+                                    }
+                                </table>
+                            </div>
                         </div>
                     }
-                }
+                </div>
             </div>
-        </div>
+        </section>
     </form>
 </main>
 
