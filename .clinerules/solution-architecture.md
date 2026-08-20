@@ -16,7 +16,7 @@
 - Existing projects MUST NOT be downgraded.
 - Multi-targeting is not allowed unless explicitly requested.
 - Examples, snippets, and generated code MUST assume .NET 10 APIs and language features when applicable.
-- These rules are in addition to the global rules defined in ~/.cline/rules/. In the event of a conflict, the local rules shall take priority for this project.
+- In the event of a conflict with cline rules, the local rules shall take priority for this project over the global rules.
 
 ---
 
@@ -304,6 +304,6 @@ Before creating:
 - New LDAP providers
 - New PowerShell modules
 
-The repository must be inspected for existing implementations.
-Existing code should be extended whenever reasonable.
+The repository must be inspected for existing implementations.  
+Existing code should be extended whenever reasonable.  
 Creating parallel implementations is discouraged and must be justified.

@@ -79,5 +79,6 @@
 -   Prefer constructor injection.
 -   Do not add dependencies without approval.
   
-**Package verification**: Before writing any code that references `IServiceCollection` or `ServiceCollection`, ensure the `Microsoft.Extensions.DependencyInjection.Abstractions` package is installed. If not, add it using `dotnet add`. This check is mandatory before creating any DI-related code.
+**Package verification**: Before writing any code that references `IServiceCollection` or `ServiceCollection`, ensure the `Microsoft.Extensions.DependencyInjection.Abstractions` package is installed.  
+If not, add it using `dotnet add`. This check is mandatory before creating any DI-related code.
 

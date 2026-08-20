@@ -2,7 +2,7 @@
 
 Create a .NET solution named **Test-IA** that strictly complies with all architecture, coding, workflow, and testing rules defined in the `./` folder of this repository.
 
-**Before starting, apply `.cline\rules\solution-workflow.md` exactly as specified: search for existing implementations, reuse or extend them, and keep changes to the minimum required.**
+**Before starting, apply `.clinerules\solution-workflow.md` exactly as specified: search for existing implementations, reuse or extend them, and keep changes to the minimum required.**
 
 ---
 
@@ -561,6 +561,6 @@ If asked to "generate documentation" and the README already exists and is up-to-
 
 ## Documentation
 
-After successful validation, including code documentation completeness, generate a professional `README.md` at the repository root using `.cline/rules/solution-readme.md` as the formatting reference.
+After successful validation, including code documentation completeness, generate a professional `README.md` at the repository root using `.clinerules/solution-readme.md` as the formatting reference.
 
 The `README.md` MUST reflect the final verified state of the solution.

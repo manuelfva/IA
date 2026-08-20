@@ -21,12 +21,13 @@ Before starting any task, load the required repository instructions.
 
 Required files:
 
-- `.cline/rules/solution-requirements.md`
-- `.cline/rules/solution-architecture.md`
-- `.cline/rules/solution-csharp.md`
-- `.cline/rules/solution-conventions.md`
-- `.cline/rules/solution-readme.md`
-- `.cline/rules/solution-memory-bank.md`
+- `.clinerules/solution-requirements.md`
+- `.clinerules/solution-architecture.md`
+- `.clinerules/solution-csharp.md`
+- `.clinerules/solution-conventions.md`
+- `.clinerules/solution-readme.md`
+- `.clinerules/solution-agent-behavior.md`
+- `.clinerules/memory-bank.md`
 - `workspace.code-workspace` (if present, used to detect project structure and build configuration)
 
 These files MUST be read only once per task.
@@ -143,7 +144,8 @@ Before coding verify:
 -   Async patterns follow repository standards.
   
 ### Step 5.5 — Add Package Dependencies
-Before writing any code that references external packages (e.g., Microsoft.Extensions.DependencyInjection.Abstractions), add the corresponding NuGet packages to the project(s) that require them. Use dotnet add <project> package <package> commands.
+Before writing any code that references external packages (e.g., Microsoft.Extensions.DependencyInjection.Abstractions), add the corresponding NuGet packages to the project(s) that require them.  
+Use dotnet add <project> package <package> commands.  
 Do not proceed to writing implementation code until all packages are successfully added and restored.
 
 ### Step 5.6 — Validate Project References
@@ -267,7 +269,7 @@ Documentation generation is the final workflow activity and MUST be executed onl
 1. Check if `README.md` exists.
 2. If it exists, evaluate if it is outdated using the criteria above.
 3. If it is up‑to‑date, **do not read, edit, or regenerate it**. Skip this step entirely.
-4. If it is outdated or does not exist, generate it **once** following the `readme-rules.md` template.
+4. If it is outdated or does not exist, generate it **once** following the `.clinerules/solution-readme.md` template.
 5. After generation, **do not modify it again** during the same task, even if other code changes occur later.
 6. **Never** update just the date without regenerating the full content.
 
@@ -279,7 +281,7 @@ Before generating, verify:
 - [ ] Diagrams represent the final solution.
 - [ ] No temporary code is documented.
 
-The README generation process must use `solution-readme.md` as the formatting reference.
+The README generation process must use `.clinerules/solution-readme.md` as the formatting reference.
 
 ------------------------------------------------------------------------
 
