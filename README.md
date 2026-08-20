@@ -57,7 +57,7 @@ graph TB
 | **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering. Includes `UserAttributeMapper` (14 LDAP attributes), `GroupAttributeMapper`, `UserUpdateAttributeMapper`, and `GroupMembershipWriterService` (LDAP modify operations for adding group members). |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
 | **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations with dynamic attribute display via `GetDisplayValues()` |
-| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()` for User, Group, and Update operations. User Search panel displays all 14 LDAP attributes dynamically. User Update card supports all 10 LDAP attributes with dynamic form field rendering. **Groups.cshtml** dedicated page for group search and adding members to groups via `IGroupMembershipWriter`. Two distinct sections (Users and Groups) with visual differentiation. Glassmorphism + Aurora UI |
+| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()` for User, Group, and Update operations. User Search panel displays all 14 LDAP attributes dynamically. User Update card supports all 10 LDAP attributes with dynamic form field rendering. **Groups.cshtml** dedicated page for group search and adding members to groups via `IGroupMembershipWriter` (single form with `Action` button routing). Two distinct sections (Users and Groups) with visual differentiation. Glassmorphism + Aurora UI |
 
 ## Projects
 
@@ -221,4 +221,4 @@ Test-IA/
 
 ## Last Updated
 
-20/08/2026 12:46
+20/08/2026 14:13

@@ -57,7 +57,7 @@ public class UsersModel : PageModel
     /// <summary>
     /// Dynamic display values for the user search result.
     /// </summary>
-    public Dictionary<string, string?>? UserDisplayValues { get; set; }
+    public Dictionary<string, string>? UserDisplayValues { get; set; }
 
     /// <summary>
     /// The samAccountName entered for user update.
@@ -73,7 +73,7 @@ public class UsersModel : PageModel
     /// <summary>
     /// Dynamic display values for the user update request.
     /// </summary>
-    public Dictionary<string, string?>? UpdateDisplayValues { get; set; }
+    public Dictionary<string, string>? UpdateDisplayValues { get; set; }
 
     /// <summary>
     /// Individual update attribute values bound from the form.

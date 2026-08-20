@@ -53,7 +53,7 @@ public class GroupsModel : PageModel
     /// <summary>
     /// Dynamic display values for the group search result.
     /// </summary>
-    public Dictionary<string, string?>? GroupDisplayValues { get; set; }
+    public Dictionary<string, string>? GroupDisplayValues { get; set; }
 
     /// <summary>
     /// Error message displayed on the page.
@@ -81,7 +81,7 @@ public class GroupsModel : PageModel
     /// The form action submitted by the user (SearchGroup or AddMember).
     /// Used to distinguish between multiple submit buttons in the same form.
     /// </summary>
-    [BindProperty]
+    [BindProperty(SupportsGet = true)]
     public string? Action { get; set; }
 
     /// <summary>
@@ -92,16 +92,15 @@ public class GroupsModel : PageModel
         GroupResult = null;
         GroupDisplayValues = null;
         Error = null;
-        AddMemberResult = null;
     }
 
     /// <summary>
-    /// Handles POST requests for group search operations.
+    /// Handles POST requests for group search and add member operations.
+    /// Routes to the appropriate handler based on the submitted Action value.
     /// </summary>
     public IActionResult OnPost()
     {
-        // Skip search logic when the form was submitted for the Add Member action.
-        // This allows OnPostAddMember() to handle the add member operation instead.
+        // Route to AddMember handler when the Add Member form was submitted.
         if (Action == "AddMember")
         {
             return OnPostAddMember();

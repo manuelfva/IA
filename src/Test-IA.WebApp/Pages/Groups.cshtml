@@ -94,12 +94,22 @@
 
             @if (Model.AddMemberResult != null)
             {
-                <div class="result-section">
-                    <h3>Add Member Result <span class="result-badge @(Model.AddMemberResult.Success ? "success" : "error")">@(Model.AddMemberResult.Success ? "Success" : "Failed")</span></h3>
-                    <div class="result-message">
-                        <p>@Model.AddMemberResult.Message</p>
+                @if (Model.AddMemberResult.Success)
+                {
+                    <div class="result-section">
+                        <h3>Add Member Result <span class="result-badge success">Success</span></h3>
+                        <div class="result-message">
+                            <p>@Model.AddMemberResult.Message</p>
+                        </div>
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="alert alert-error">
+                        <span class="alert-icon">&#9888;</span>
+                        <div><strong>Add Member Failed:</strong> @Model.AddMemberResult.Message</div>
+                    </div>
+                }
             }
         </div>
     </section>
