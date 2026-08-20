@@ -60,6 +60,7 @@ The `LdapFilterHelper` class manually escapes special LDAP characters (`\`, `*`,
 Service interfaces are defined in the Domain layer:
 - `IGetADUserInfo` → `GetADUserInfoService`
 - `IGetADGroupInfo` → `GetADGroupInfoService`
+- `IGroupMembershipWriter` → `GroupMembershipWriterService`
 
 This allows the services to be replaced or mocked in tests.
 
@@ -68,6 +69,9 @@ This allows the services to be replaced or mocked in tests.
 A generic `IAttributeMapper<TDto>` interface in the Application layer centralizes LDAP-to-DTO mapping:
 - `IAttributeMapper<TDto>` — declares `Attributes` dictionary, `Map(SearchResultEntry)` method, and `GetDisplayValues(TDto)` method
 - `UserAttributeMapper` — implements `IAttributeMapper<UserDto>`, maps 14 LDAP attributes: `displayName`, `employeeID`, `mail`, `userPrincipalName`, `info`, `mobile`, `sAMAccountName`, `streetAddress`, `l` (city), `st` (state), `postalCode`, `department`, `title`, `telephoneNumber`
+- **Authorization pattern**: `IUserGroupAuthorizationService` interface in Domain layer, `UserGroupAuthorizationService` implementation in Application layer. Both ConsoleApp and WebApp reuse the same service. ConsoleApp fails fast on authorization failure; WebApp uses ASP.NET Core policy-based authorization.
+- **Group Membership Writer pattern**: `IGroupMembershipWriter` interface in Domain layer, `GroupMembershipWriterService` implementation in Application layer. Performs LDAP `ModifyRequest` to add a user's DN to a group's `member` attribute. WebApp Groups page uses this service via `OnPostAddMember()`.
+
 - `GroupAttributeMapper` — implements `IAttributeMapper<GroupDto>`, maps `displayName` + `member` DN array
 - `UserUpdateAttributeMapper` — implements `IAttributeMapper<UserUpdateRequest>`, maps 10 user update attributes using correct LDAP attribute names
 

@@ -20,7 +20,7 @@ A .NET 10.0 solution that demonstrates Active Directory user and group lookup se
 
 ## Overview
 
-**Test-IA** is a .NET 10.0 solution that demonstrates Active Directory (AD DS) user and group information retrieval using real LDAP connections with Windows Integrated Authentication. The solution includes **group-based authorization** that restricts access to users who are members of a configured Active Directory group (e.g., "Employees of IT").
+**Test-IA** is a .NET 10.0 solution that demonstrates Active Directory (AD DS) user and group information retrieval using real LDAP connections with Windows Integrated Authentication. The solution includes **group-based authorization** that restricts access to users who are members of a configured Active Directory group (e.g., "Employees of IT"). Users can also **add members to groups** via the WebApp Groups page.
 
 ## Architecture
 
@@ -53,11 +53,11 @@ graph TB
 
 | Layer | Responsibility |
 |---|---|
-| **Domain** | Service interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`, `IUserWriter`), DTOs (`UserDto`, `GroupDto`), and domain exceptions (`DomainException`, `AccessDeniedException`, `MissingGroupException`) |
-| **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering. Includes `UserAttributeMapper` (14 LDAP attributes), `GroupAttributeMapper`, and `UserUpdateAttributeMapper`. |
+| **Domain** | Service interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`, `IUserWriter`, `IGroupMembershipWriter`), DTOs (`UserDto`, `GroupDto`, `GroupMemberOperationResult`), and domain exceptions (`DomainException`, `AccessDeniedException`, `MissingGroupException`, `UserNotFoundException`, `GroupNotFoundException`) |
+| **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering. Includes `UserAttributeMapper` (14 LDAP attributes), `GroupAttributeMapper`, `UserUpdateAttributeMapper`, and `GroupMembershipWriterService` (LDAP modify operations for adding group members). |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
 | **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations with dynamic attribute display via `GetDisplayValues()` |
-| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()` for User, Group, and Update operations. User Search panel displays all 14 LDAP attributes dynamically. User Update card supports all 10 LDAP attributes with dynamic form field rendering. Two distinct sections (Users and Groups) with visual differentiation. Glassmorphism + Aurora UI |
+| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()` for User, Group, and Update operations. User Search panel displays all 14 LDAP attributes dynamically. User Update card supports all 10 LDAP attributes with dynamic form field rendering. **Groups.cshtml** dedicated page for group search and adding members to groups via `IGroupMembershipWriter`. Two distinct sections (Users and Groups) with visual differentiation. Glassmorphism + Aurora UI |
 
 ## Projects
 
@@ -76,13 +76,21 @@ graph TB
 
 Retrieves Active Directory user information by `samAccountName`.
 
-**Returns:** `UserDto` with `DisplayName`, `EmployeeId`, `Mail`, `UserPrincipalName`, `Info`, and `Mobile`
+**Returns:** `UserDto` with `DisplayName`, `EmployeeId`, `Mail`, `UserPrincipalName`, `Info`, `Mobile`, `SamAccountName`, `StreetAddress`, `City`, `State`, `PostalCode`, `Department`, `Title`, `PhoneNumber`
 
 ### IGetADGroupInfo
 
 Retrieves Active Directory group information by `samAccountName`.
 
 **Returns:** `GroupDto` with `DisplayName` and `Members` (array of resolved display names, not DNs)
+
+### IGroupMembershipWriter
+
+Adds a user as a member to an Active Directory group via LDAP modify operations.
+
+**Parameters:** `groupSamAccountName`, `memberSamAccountName`
+
+**Returns:** `GroupMemberOperationResult` with `Success` status and descriptive message
 
 ### IUserGroupAuthorizationService
 
@@ -108,6 +116,7 @@ All services are registered via `ServiceCollectionExtensions.AddTestIAServices()
 - `IGetADGroupInfo` / `GetADGroupInfoService` → Scoped
 - `IUserGroupAuthorizationService` / `UserGroupAuthorizationService` → Scoped
 - `IUserWriter` / `UserWriterService` → Scoped
+- `IGroupMembershipWriter` / `GroupMembershipWriterService` → Scoped
 - `IAttributeMapper<UserUpdateRequest>` / `UserUpdateAttributeMapper` → Scoped
 
 ## Configuration
@@ -212,4 +221,4 @@ Test-IA/
 
 ## Last Updated
 
-19/08/2026 14:28
+20/08/2026 12:46

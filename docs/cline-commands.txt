@@ -1,4 +1,7 @@
 
 REGLAS GLOBALES EN: C:\Users\MFVA649T\.cline\rules
 
-Tras ejecutar el slash \clear tendremos que ejecutar el comando: follow your custom instructions
+INICIAR NUEVA SESION
+--------------------
+1. >/clear 
+2. Ejecutar: >Follow your custom instructions

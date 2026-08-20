@@ -61,4 +61,46 @@
             }
         </div>
     </section>
+
+    <!-- ============================================
+         ADD MEMBER TO GROUP SECTION
+         ============================================ -->
+    <section class="form-section">
+        <div class="search-card">
+            <div class="card-header">
+                <div class="card-header-icon add-member">&#128101;&#43;</div>
+                <div>
+                    <h2>Add Member to Group</h2>
+                    <p class="card-description">Add a user as a member to an existing group</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="AddMemberGroupSamAccountName">Target Group samAccountName <span class="label-hint">— e.g. IT Department</span></label>
+                    <input type="text" id="AddMemberGroupSamAccountName" name="AddMemberGroupSamAccountName"
+                           value="@Model.AddMemberGroupSamAccountName" placeholder="Enter group samAccountName" />
+                </div>
+                <div class="form-group">
+                    <label for="AddMemberMemberSamAccountName">Member User samAccountName <span class="label-hint">— e.g. jsmith</span></label>
+                    <input type="text" id="AddMemberMemberSamAccountName" name="AddMemberMemberSamAccountName"
+                           value="@Model.AddMemberMemberSamAccountName" placeholder="Enter user samAccountName" />
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" name="Action" value="AddMember" class="btn btn-primary">
+                    <span>&#128101;&#43;</span> Add Member
+                </button>
+            </div>
+
+            @if (Model.AddMemberResult != null)
+            {
+                <div class="result-section">
+                    <h3>Add Member Result <span class="result-badge @(Model.AddMemberResult.Success ? "success" : "error")">@(Model.AddMemberResult.Success ? "Success" : "Failed")</span></h3>
+                    <div class="result-message">
+                        <p>@Model.AddMemberResult.Message</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
 </form>
