@@ -1,0 +1,42 @@
+Test-NetConnection almayate-srv -Port 5000
+
+Invoke-WebRequest http://almayate-srv:5000
+Invoke-WebRequest http://almayate-srv:7077 -UseDefaultCredentials
+curl.exe -v http://almayate-srv:5000/
+
+Get-NetTCPConnection -LocalPort 5000 -State Listen | Select-Object LocalAddress,LocalPort,OwningProcess
+Get-Process -Id <PID>
+Get-Process -Id <PID> | Select-Object Id,ProcessName,Path
+
+curl.exe --negotiate -u : -v http://almayate-srv:7077/
+
+Cliente
+   │
+   │ HTTP://almayate-srv:7077
+   ▼
+Kestrel
+   │
+   │ Negotiate
+   ▼
+Kerberos
+   │
+   │ solicita ticket para HTTP/almayate-srv
+   ▼
+AD
+   │
+   │ encuentra SPN
+   ▼
+❌ Principal incorrecto
+
+setspn -Q HTTP/almayate-srv
+
+Get-Process -Id 7128 -IncludeUserName | Select-Object Id,ProcessName,UserName
+
+setspn -L ASTURMAL\Administrador
+setspn -S HTTP/almayate-srv ASTURMAL\Administrador
+setspn -S HTTP/almayate-srv.asturmal.com ASTURMAL\Administrador
+setspn -Q HTTP/almayate-srv
+
+En cliente:
+klist purge
+curl.exe --negotiate -u : -v http://almayate-srv:7077/
