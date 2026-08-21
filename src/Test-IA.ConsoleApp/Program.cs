@@ -42,6 +42,7 @@ public class Program
 
         // Register logging
         services.AddSingleton<ILoggerService>(sp => new LoggingService(loggerFactory.CreateLogger<LoggingService>(), sinks));
+        services.AddScoped<ICurrentUser, ConsoleCurrentUser>();
         services.AddTestIAServices();
 
         // Register attribute mappers as singletons (stateless, no external dependencies)

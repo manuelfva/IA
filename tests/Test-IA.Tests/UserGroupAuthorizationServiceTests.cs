@@ -37,6 +37,19 @@ public class ThrowingADDomainDiscoveryServiceForAuth : ADDomainDiscoveryService
 public class UserGroupAuthorizationServiceTests
 {
     /// <summary>
+    /// Creates a mock <see cref="ICurrentUser"/> for testing.
+    /// </summary>
+    /// <param name="userName">The user name to return (e.g., "DOMAIN\\user").</param>
+    /// <returns>A configured <see cref="ICurrentUser"/> substitute.</returns>
+    private static ICurrentUser CreateMockCurrentUser(string userName = "DOMAIN\\testuser")
+    {
+        var currentUser = Substitute.For<ICurrentUser>();
+        currentUser.UserName.Returns(userName);
+        currentUser.IsAuthenticated.Returns(true);
+        return currentUser;
+    }
+
+    /// <summary>
     /// Tests that IsMemberOfGroup throws DomainException when the discovery service throws a DomainException.
     /// </summary>
     [Fact]
@@ -44,9 +57,10 @@ public class UserGroupAuthorizationServiceTests
     {
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryServiceForAuth(new DomainException("Not joined to a domain."));
+        var currentUser = CreateMockCurrentUser();
         var logger = Substitute.For<ILogger<UserGroupAuthorizationService>>();
         var options = Options.Create(new AuthorizationSettings { RequiredGroup = "IT" });
-        var service = new UserGroupAuthorizationService(discoveryService, logger, options);
+        var service = new UserGroupAuthorizationService(discoveryService, currentUser, logger, options);
 
         // Act
         var act = () => service.IsMemberOfGroup("IT");
@@ -66,9 +80,10 @@ public class UserGroupAuthorizationServiceTests
         // A full integration test would require a real AD LDS instance.
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryServiceForAuth(new DomainException("Not joined to a domain."));
+        var currentUser = CreateMockCurrentUser();
         var logger = Substitute.For<ILogger<UserGroupAuthorizationService>>();
         var options = Options.Create(new AuthorizationSettings { RequiredGroup = "IT" });
-        var service = new UserGroupAuthorizationService(discoveryService, logger, options);
+        var service = new UserGroupAuthorizationService(discoveryService, currentUser, logger, options);
 
         // Act
         var act = () => service.IsMemberOfGroup("IT");
@@ -86,11 +101,12 @@ public class UserGroupAuthorizationServiceTests
         // Arrange
         var logger = Substitute.For<ILogger<ADDomainDiscoveryService>>();
         var discoveryService = new ADDomainDiscoveryService(logger);
+        var currentUser = CreateMockCurrentUser();
         var loggerAuth = Substitute.For<ILogger<UserGroupAuthorizationService>>();
         var options = Options.Create(new AuthorizationSettings { RequiredGroup = "IT" });
 
         // Act
-        var act = () => new UserGroupAuthorizationService(discoveryService, loggerAuth, options);
+        var act = () => new UserGroupAuthorizationService(discoveryService, currentUser, loggerAuth, options);
 
         // Assert
         act.Should().NotThrow();
@@ -103,14 +119,34 @@ public class UserGroupAuthorizationServiceTests
     public void Constructor_WithNullDiscoveryService_ThrowsArgumentNullException()
     {
         // Arrange
+        var currentUser = CreateMockCurrentUser();
         var logger = Substitute.For<ILogger<UserGroupAuthorizationService>>();
         var options = Options.Create(new AuthorizationSettings { RequiredGroup = "IT" });
 
         // Act
-        var act = () => new UserGroupAuthorizationService(null!, logger, options);
+        var act = () => new UserGroupAuthorizationService(null!, currentUser, logger, options);
 
         // Assert
         act.Should().Throw<ArgumentNullException>().WithParameterName("discovery");
+    }
+
+    /// <summary>
+    /// Tests that the service throws ArgumentNullException when current user is null.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithNullCurrentUser_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var loggerDiscovery = Substitute.For<ILogger<ADDomainDiscoveryService>>();
+        var discoveryService = new ADDomainDiscoveryService(loggerDiscovery);
+        var loggerAuth = Substitute.For<ILogger<UserGroupAuthorizationService>>();
+        var options = Options.Create(new AuthorizationSettings { RequiredGroup = "IT" });
+
+        // Act
+        var act = () => new UserGroupAuthorizationService(discoveryService, null!, loggerAuth, options);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("currentUser");
     }
 
     /// <summary>
@@ -122,10 +158,12 @@ public class UserGroupAuthorizationServiceTests
         // Arrange
         var loggerDiscovery = Substitute.For<ILogger<ADDomainDiscoveryService>>();
         var discoveryService = new ADDomainDiscoveryService(loggerDiscovery);
+        var currentUser = CreateMockCurrentUser();
+        var loggerAuth = Substitute.For<ILogger<UserGroupAuthorizationService>>();
         var options = Options.Create(new AuthorizationSettings { RequiredGroup = "IT" });
 
         // Act
-        var act = () => new UserGroupAuthorizationService(discoveryService, null!, options);
+        var act = () => new UserGroupAuthorizationService(discoveryService, currentUser, null!, options);
 
         // Assert
         act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
@@ -140,10 +178,11 @@ public class UserGroupAuthorizationServiceTests
         // Arrange
         var loggerDiscovery = Substitute.For<ILogger<ADDomainDiscoveryService>>();
         var discoveryService = new ADDomainDiscoveryService(loggerDiscovery);
+        var currentUser = CreateMockCurrentUser();
         var loggerAuth = Substitute.For<ILogger<UserGroupAuthorizationService>>();
 
         // Act
-        var act = () => new UserGroupAuthorizationService(discoveryService, loggerAuth, null!);
+        var act = () => new UserGroupAuthorizationService(discoveryService, currentUser, loggerAuth, null!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>().WithParameterName("settings");

@@ -1,5 +1,4 @@
 using System.DirectoryServices.Protocols;
-using System.Security.Principal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TestIA.Domain;
@@ -37,6 +36,11 @@ public class UserGroupAuthorizationService : IUserGroupAuthorizationService
     private readonly ADDomainDiscoveryService _discovery;
 
     /// <summary>
+    /// Provides the current authenticated user's identity.
+    /// </summary>
+    private readonly ICurrentUser _currentUser;
+
+    /// <summary>
     /// Logger for structured application events (authorization checks, errors, results).
     /// </summary>
     private readonly ILogger<UserGroupAuthorizationService> _logger;
@@ -53,6 +57,10 @@ public class UserGroupAuthorizationService : IUserGroupAuthorizationService
     /// The Active Directory discovery service used to locate the domain, Domain Controller,
     /// and LDAP Base DN dynamically at runtime. Must not be null.
     /// </param>
+    /// <param name="currentUser">
+    /// The current user identity provider used to determine which user to check for group membership.
+    /// Must not be null.
+    /// </param>
     /// <param name="logger">
     /// The logger instance used for structured logging of authorization operations.
     /// Must not be null.
@@ -63,10 +71,12 @@ public class UserGroupAuthorizationService : IUserGroupAuthorizationService
     /// </param>
     public UserGroupAuthorizationService(
         ADDomainDiscoveryService discovery,
+        ICurrentUser currentUser,
         ILogger<UserGroupAuthorizationService> logger,
         IOptions<AuthorizationSettings> settings)
     {
         _discovery = discovery ?? throw new ArgumentNullException(nameof(discovery));
+        _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _settings = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
     }
@@ -97,19 +107,20 @@ public class UserGroupAuthorizationService : IUserGroupAuthorizationService
         // Log the authorization check intent for observability.
         _logger.LogInformation("Checking group membership for current user against group: {GroupName}", groupName);
 
-        // Step 1: Get the current Windows user identity
-        // Step 1: Get the current Windows user identity from the security context.
-        var windowsIdentity = WindowsIdentity.GetCurrent();
-        if (windowsIdentity == null)
+        // Step 1: Get the current Windows user identity from the ICurrentUser abstraction.
+        // This works in both ConsoleApp (WindowsIdentity) and WebApp (HttpContext.User).
+        var userSamAccountName = _currentUser.UserName;
+        if (string.IsNullOrEmpty(userSamAccountName))
         {
-            // Unable to retrieve the Windows identity — this should not happen on Windows.
-            _logger.LogWarning("Could not retrieve the current Windows identity.");
+            // Unable to retrieve the user identity — this should not happen on a properly
+            // configured Windows machine (ConsoleApp) or authenticated web request (WebApp).
+            _logger.LogWarning("Could not retrieve the current user identity.");
             return false;
         }
 
         // Extract the user's logon name from the DOMAIN\Username format.
-        var userSamAccountName = windowsIdentity.Name.Split('\\')[1];
-        _logger.LogInformation("Current Windows user: {UserSamAccountName}", userSamAccountName);
+        var userSamAccountNameShort = userSamAccountName.Split('\\')[1];
+        _logger.LogInformation("Current user identity: {UserSamAccountName}", userSamAccountNameShort);
 
         // Step 2: Discover the Active Directory environment
         // Step 2: Discover the Active Directory environment (domain, DC, Base DN).
@@ -123,11 +134,11 @@ public class UserGroupAuthorizationService : IUserGroupAuthorizationService
 
         // Step 4: Get the current user's Distinguished Name via LDAP search
         // Step 4: Get the current user's Distinguished Name via LDAP search.
-        var userDn = GetUserDistinguishedName(userSamAccountName, domainController, baseDN);
+        var userDn = GetUserDistinguishedName(userSamAccountNameShort, domainController, baseDN);
         if (string.IsNullOrEmpty(userDn))
         {
             // The current user could not be found in Active Directory.
-            _logger.LogWarning("Could not find the current user ({UserSamAccountName}) in Active Directory.", userSamAccountName);
+            _logger.LogWarning("Could not find the current user ({UserSamAccountName}) in Active Directory.", userSamAccountNameShort);
             return false;
         }
 

@@ -13,6 +13,7 @@ A .NET 10.0 solution that demonstrates Active Directory user and group lookup se
 - [Configuration](#configuration)
 - [Getting Started](#getting-started)
 - [Testing](#testing)
+- [Deployment](#deployment)
 - [Coding Standards](#coding-standards)
 - [Technology Stack](#technology-stack)
 - [Repository Structure](#repository-structure)
@@ -53,8 +54,8 @@ graph TB
 
 | Layer | Responsibility |
 |---|---|
-| **Domain** | Service interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`, `IUserWriter`, `IGroupMembershipWriter`), DTOs (`UserDto`, `GroupDto`, `GroupMemberOperationResult`), and domain exceptions (`DomainException`, `AccessDeniedException`, `MissingGroupException`, `UserNotFoundException`, `GroupNotFoundException`) |
-| **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering. Includes `UserAttributeMapper` (14 LDAP attributes), `GroupAttributeMapper`, `UserUpdateAttributeMapper`, and `GroupMembershipWriterService` (LDAP modify operations for adding group members). |
+| **Domain** | Service interfaces (`IGetADUserInfo`, `IGetADGroupInfo`, `IUserGroupAuthorizationService`, `IUserWriter`, `IGroupMembershipWriter`, `ICurrentUser`), DTOs (`UserDto`, `GroupDto`, `GroupMemberOperationResult`), and domain exceptions (`DomainException`, `AccessDeniedException`, `MissingGroupException`, `UserNotFoundException`, `GroupNotFoundException`) |
+| **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering. Includes `UserAttributeMapper` (14 LDAP attributes), `GroupAttributeMapper`, `UserUpdateAttributeMapper`, `GroupMembershipWriterService` (LDAP modify operations for adding group members), `ICurrentUser` implementations (`ConsoleCurrentUser`, `WebCurrentUser`) for identity resolution, and `CurrentUserMockHelper` for test mocking. |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
 | **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations with dynamic attribute display via `GetDisplayValues()` |
 | **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()` for User, Group, and Update operations. User Search panel displays all 14 LDAP attributes dynamically. User Update card supports all 10 LDAP attributes with dynamic form field rendering. **Groups.cshtml** dedicated page for group search, adding members to groups, and removing members from groups via `IGroupMembershipWriter` (single form with `Action` button routing). Two distinct sections (Users and Groups) with visual differentiation. Glassmorphism + Aurora UI. Navbar badge displays the current Windows user's identity (`DOMAIN\\Username`) via `WindowsIdentity.GetCurrent()?.Name`. Logging service uses extensible sink pattern (`ILoggingSink`) — file, console, database, Event Log sinks are pluggable via `appsettings.json` `Logging.Sinks` section. |
@@ -100,6 +101,8 @@ Adds or removes a user as a member of an Active Directory group via LDAP modify 
 
 Checks whether the current Windows user is a member of a configured Active Directory group.
 
+Uses `ICurrentUser` abstraction for identity resolution: `ConsoleCurrentUser` reads from `WindowsIdentity.GetCurrent()`, `WebCurrentUser` reads from `HttpContext.User`. Both extract the short `samAccountName` (after the last `\`) required by LDAP `sAMAccountName` searches.
+
 **Returns:** `bool` — `true` if the user is a group member, `false` otherwise.
 
 ### IUserWriter
@@ -122,6 +125,8 @@ All services are registered via `ServiceCollectionExtensions.AddTestIAServices()
 - `IUserWriter` / `UserWriterService` → Scoped
 - `IGroupMembershipWriter` / `GroupMembershipWriterService` → Scoped
 - `IAttributeMapper<UserUpdateRequest>` / `UserUpdateAttributeMapper` → Scoped
+- `ICurrentUser` / `ConsoleCurrentUser` (ConsoleApp) or `WebCurrentUser` (WebApp) → Scoped
+- `HttpContextAccessor` → Singleton (WebApp only, via `AddHttpContextAccessor()`)
 
 ## Configuration
 
@@ -182,6 +187,124 @@ dotnet test
 
 > Tests pending execution.
 
+## Deployment
+
+### Self-Contained Deployment Package
+
+The solution supports **self-contained deployment** — the published package includes the full .NET 10.0 runtime, so no runtime installation is required on the target machine.
+
+#### Automated Publishing Script
+
+A PowerShell script automates the entire build-and-package pipeline:
+
+```powershell
+.\scripts\publish-webapp.ps1
+```
+
+**Pipeline (6 steps):**
+
+| Step | Command | Purpose |
+|------|---------|---------|
+| 1/6 | `dotnet clean` | Removes old build artifacts |
+| 2/6 | `dotnet restore` | Downloads NuGet packages |
+| 3/6 | `dotnet build --configuration Release` | Compiles all projects |
+| 4/6 | `dotnet test` | Runs unit tests (aborts on failure) |
+| 5/6 | `dotnet publish --self-contained true --runtime win-x64` | Produces the self-contained bundle |
+| 6/6 | `Compress-Archive` + embedded README | Wraps into a timestamped `.zip` |
+
+**Parameters:**
+
+| Parameter | Default | Purpose |
+|-----------|---------|---------|
+| `-Configuration` | `"Release"` | Build configuration (`Release` or `Debug`) |
+| `-RuntimeIdentifier` | `"win-x64"` | Target platform |
+| `-OutputPath` | `""` (empty) | Custom output folder (default: `releases/publish/`) |
+| `-SkipTests` | `$false` | Skip unit tests for quick rebuilds |
+
+**Examples:**
+
+```powershell
+# Default: full pipeline, output to releases/publish
+.\scripts\publish-webapp.ps1
+
+# Custom output folder
+.\scripts\publish-webapp.ps1 -OutputPath "C:\deploy\webapp"
+
+# Skip tests for a quick rebuild
+.\scripts\publish-webapp.ps1 -SkipTests
+
+# Debug configuration
+.\scripts\publish-webapp.ps1 -Configuration Debug
+```
+
+#### Manual Publishing
+
+```powershell
+dotnet publish src/Test-IA.WebApp/Test-IA.WebApp.csproj `
+    --configuration Release `
+    --runtime win-x64 `
+    --self-contained true `
+    --output releases/publish
+```
+
+#### Deployment Package Contents
+
+| File/Folder | Description |
+|-------------|-------------|
+| `Test-IA.WebApp.exe` | Self-contained executable (includes .NET 10 runtime) |
+| `Test-IA.Application.dll` + `.pdb` | Application layer |
+| `Test-IA.Domain.dll` + `.pdb` | Domain layer |
+| `Test-IA.Logging.dll` + `.pdb` | Logging layer |
+| `appsettings.json` | Default configuration |
+| `appsettings.Development.json` | Development overrides |
+| `README-deploy.txt` | Deployment guide (extracted from zip) |
+| `wwwroot/` | Static web assets (CSS, JS) |
+| `coreclr.dll`, `hostfxr.dll` | .NET runtime (bundled) |
+
+#### Deploying the Package
+
+1. **Copy** the zip file to the target server:
+   ```powershell
+   Copy-Item Test-IA.WebApp-deploy-*.zip \\target-server\C$\deploy\
+   ```
+
+2. **Extract** on the target server:
+   ```powershell
+   Expand-Archive Test-IA.WebApp-deploy-*.zip -DestinationPath "C:\WebApps\Test-IA"
+   ```
+
+3. **Run** the application:
+   ```powershell
+   cd "C:\WebApps\Test-IA"
+   .\Test-IA.WebApp.exe
+   ```
+
+4. **Access** in a browser:
+   ```
+   http://localhost:5000
+   ```
+
+#### Running as a Windows Service (Production)
+
+To run as a background service, use [NSSM](https://nssm.cc/):
+
+```powershell
+# Install NSSM
+choco install nssm
+
+# Register the service
+nssm install Test-IA.WebApp "C:\WebApps\Test-IA\Test-IA.WebApp.exe"
+nssm set Test-IA.WebApp Directory "C:\WebApps\Test-IA"
+nssm start Test-IA.WebApp
+```
+
+#### Prerequisites for Deployment
+
+- **Windows machine** joined to an Active Directory domain
+- **.NET 10.0 Runtime is NOT required** (bundled with the package)
+- Network access to at least one Domain Controller
+- User account running the app must have LDAP read access to the domain
+
 ## Coding Standards
 
 - **Nullable reference types:** Enabled
@@ -219,13 +342,18 @@ Test-IA/
 │   └── Test-IA.WebApp/          # ASP.NET Core Razor Pages web interface
 ├── tests/
 │   └── Test-IA.Tests/           # xUnit tests
+├── scripts/
+│   └── publish-webapp.ps1       # Automated build-and-package deployment script
+├── releases/
+│   ├── publish/                 # Published self-contained output (349 files)
+│   └── Test-IA.WebApp-deploy-*.zip  # Deployment package (zip)
 ├── Test-IA.slnx                  # Solution file
 └── memory-bank/                  # Project memory bank
 ```
 
 ## Last Updated
 
-21/08/2026 10:55
+21/08/2026 20:03
 
 
 

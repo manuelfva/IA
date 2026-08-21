@@ -219,13 +219,18 @@ sequenceDiagram
     participant U as User
     participant C as ConsoleApp
     participant W as WebApp
+    participant CU as ICurrentUser
     participant A as IUserGroupAuthorizationService
     participant L as LDAP (AD)
 
     Note over C,W: Authorization Check
     
-    C->>A: IsMemberOfGroup(requiredGroup)
-    W->>A: IsMemberOfGroup(requiredGroup)
+    C->>CU: GetSamAccountName()
+    W->>CU: GetSamAccountName()
+    CU-->>C: short username
+    CU-->>W: short username
+    C->>A: IsMemberOfGroup(requiredGroup, shortUsername)
+    W->>A: IsMemberOfGroup(requiredGroup, shortUsername)
     A->>L: Search group by samAccountName
     alt Group exists
         L-->>A: Group DN
@@ -257,6 +262,27 @@ sequenceDiagram
 
 **WebApp**: Uses ASP.NET Core Windows Authentication (`AddNegotiate()`) + policy-based authorization (`AddPolicy("RequiredGroup")`). `GroupAuthorizationHandler` uses `IServiceScopeFactory` to resolve scoped `IUserGroupAuthorizationService` within a scope. Non-member users receive 401 Unauthorized.
 
+**ICurrentUser Abstraction**: `ICurrentUser` interface in the Domain layer decouples identity resolution from presentation-layer mechanisms. `ConsoleCurrentUser` reads `WindowsIdentity.GetCurrent()?.Name` and extracts the short `samAccountName` (after the last `\`). `WebCurrentUser` reads `HttpContext.User.Identity?.Name` the same way. Both return the short username required by LDAP `sAMAccountName` searches. The `UserGroupAuthorizationService` injects `ICurrentUser` instead of `WindowsIdentity` directly, enabling testability and clean separation.
+
 **Configuration**: `Authorization.RequiredGroup` in `appsettings.json` is configurable per environment. Both applications use the same `AuthorizationSettings` class.
 
 **Service**: `UserGroupAuthorizationService` checks group membership via LDAP. Throws `MissingGroupException` if group not found, returns `false` if user not found or not a member.
+
+### 11. Self-Contained Deployment Pattern
+
+The WebApp supports self-contained deployment — the published package includes the full .NET 10.0 runtime, so no runtime installation is required on the target machine.
+
+**Publishing Pipeline** (`scripts/publish-webapp.ps1`):
+
+1. `dotnet clean` — removes old build artifacts
+2. `dotnet restore` — downloads NuGet packages
+3. `dotnet build --configuration Release` — compiles all projects
+4. `dotnet test` — runs unit tests (aborts on failure)
+5. `dotnet publish --self-contained true --runtime win-x64` — produces the self-contained bundle
+6. `Compress-Archive` + embedded README — wraps into a timestamped `.zip`
+
+**Project Properties**: `Test-IA.WebApp.csproj` includes `<RuntimeIdentifier>win-x64</RuntimeIdentifier>` and `<SelfContained>true</SelfContained>`. `PublishSingleFile` is kept as `false` because it causes >30s timeouts when combined with self-contained.
+
+**Deployment Package** (`releases/Test-IA.WebApp-deploy-*.zip`): ~46.5 MB containing `Test-IA.WebApp.exe`, all application DLLs, `appsettings.json`, `README-deploy.txt`, and the bundled .NET runtime (`coreclr.dll`, `hostfxr.dll`, `hostpolicy.dll`).
+
+**Deployment Steps**: Copy zip → extract → run `Test-IA.WebApp.exe` → access at `http://localhost:5000`. For production, register as a Windows service using NSSM.

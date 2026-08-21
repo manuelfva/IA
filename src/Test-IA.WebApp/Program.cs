@@ -33,6 +33,12 @@ public class Program
         builder.Services.AddSingleton<ILoggerService>(sp =>
             new LoggingService(sp.GetRequiredService<ILogger<LoggingService>>(), sinks));
 
+        // Register HttpContext accessor (required for WebCurrentUser)
+        builder.Services.AddHttpContextAccessor();
+
+        // Register current user identity from HTTP context
+        builder.Services.AddScoped<ICurrentUser, WebCurrentUser>();
+
         // Register Test-IA AD services
         builder.Services.AddTestIAServices();
 

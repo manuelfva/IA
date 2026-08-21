@@ -42,6 +42,20 @@ dotnet test
 
 # Run console application (requires domain-joined machine)
 dotnet run --project src/Test-IA.ConsoleApp/Test-IA.ConsoleApp.csproj
+
+# Run web application (requires domain-joined machine)
+dotnet run --project src/Test-IA.WebApp
+
+# Publish self-contained deployment package
+dotnet publish src/Test-IA.WebApp/Test-IA.WebApp.csproj --configuration Release --runtime win-x64 --self-contained true --output releases/publish
+
+# Automated deployment pipeline
+.\scripts\publish-webapp.ps1
+
+# Deploy to target server
+Expand-Archive releases\Test-IA.WebApp-deploy-*.zip -DestinationPath "C:\WebApps\Test-IA"
+cd "C:\WebApps\Test-IA"
+.\Test-IA.WebApp.exe
 ```
 
 ## Project Dependencies
@@ -85,6 +99,7 @@ dotnet run --project src/Test-IA.ConsoleApp/Test-IA.ConsoleApp.csproj
 - **XML Documentation**: All public members must have `///` comments.
 - **Authorization group**: Configurable via `appsettings.json` (`Authorization.RequiredGroup`). Both ConsoleApp and WebApp use the same `AuthorizationSettings` class.
 - **WebApp Windows Auth**: Uses `AddNegotiate()` for Kerberos/NTLM. `GroupAuthorizationHandler` uses `IServiceScopeFactory` to resolve scoped services within a scope.
+- **ICurrentUser Abstraction**: `ICurrentUser` interface in Domain layer decouples identity resolution from presentation layers. `ConsoleCurrentUser` reads `WindowsIdentity.GetCurrent()?.Name`. `WebCurrentUser` reads `HttpContext.User.Identity?.Name`. Both extract the short `samAccountName` (after the last `\`) for LDAP `sAMAccountName` searches. `UserGroupAuthorizationService` injects `ICurrentUser` instead of `WindowsIdentity` directly.
 
 ## LDAP-Specific Technical Details
 
