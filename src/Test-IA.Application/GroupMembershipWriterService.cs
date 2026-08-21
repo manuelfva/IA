@@ -105,6 +105,62 @@ public class GroupMembershipWriterService : IGroupMembershipWriter
         return new GroupMemberOperationResult(true, $"Successfully added ''{memberSamAccountName}'' as a member to group ''{groupSamAccountName}''.");
     }
 
+    /// <inheritdoc />
+    public GroupMemberOperationResult RemoveMember(string groupSamAccountName, string memberSamAccountName)
+    {
+        ArgumentNullException.ThrowIfNull(groupSamAccountName);
+        ArgumentNullException.ThrowIfNull(memberSamAccountName);
+
+        if (string.IsNullOrWhiteSpace(groupSamAccountName))
+        {
+            throw new ArgumentException("Group samAccountName cannot be empty.", nameof(groupSamAccountName));
+        }
+
+        if (string.IsNullOrWhiteSpace(memberSamAccountName))
+        {
+            throw new ArgumentException("Member samAccountName cannot be empty.", nameof(memberSamAccountName));
+        }
+
+        _logger.LogInformation("Attempting to remove user ''{MemberSamAccountName}'' from group ''{GroupSamAccountName}''", memberSamAccountName, groupSamAccountName);
+
+        // Discover the Active Directory environment to get the Domain Controller and Base DN.
+        var (domainName, domainController, baseDN) = _discoveryService.Discover();
+
+        // Create an LDAP connection to the discovered Domain Controller.
+        using var connection = new LdapConnection(domainController);
+        connection.AuthType = AuthType.Negotiate;
+
+        // Search for the group by samAccountName to get its Distinguished Name.
+        var groupDn = SearchDistinguishedName(connection, baseDN, "group", groupSamAccountName, _logger);
+
+        // Search for the user by samAccountName to get their Distinguished Name.
+        var memberDn = SearchDistinguishedName(connection, baseDN, "person", memberSamAccountName, _logger);
+
+        // Build the LDAP modify request to remove the member from the group.
+        var modification = new DirectoryAttributeModification { Name = "member", Operation = DirectoryAttributeOperation.Delete };
+        modification.Add(memberDn);
+        var modifyRequest = new ModifyRequest(groupDn, new[] { modification });
+
+        try
+        {
+            connection.SendRequest(modifyRequest);
+        }
+        catch (LdapException ex)
+        {
+            _logger.LogError(ex, "LDAP error while removing ''{MemberSamAccountName}'' from group ''{GroupSamAccountName}'' (Group DN: {GroupDn})", memberSamAccountName, groupSamAccountName, groupDn);
+            throw new DomainException($"LDAP error while removing member from group ''{groupSamAccountName}''.", ex);
+        }
+        catch (DirectoryOperationException ex)
+        {
+            _logger.LogError(ex, "Directory operation error while removing ''{MemberSamAccountName}'' from group ''{GroupSamAccountName}'' (Group DN: {GroupDn})", memberSamAccountName, groupSamAccountName, groupDn);
+            throw new DomainException($"Directory operation failed while removing member from group ''{groupSamAccountName}''. {ex.Message}", ex);
+        }
+
+        _logger.LogInformation("Successfully removed user ''{MemberSamAccountName}'' from group ''{GroupSamAccountName}''", memberSamAccountName, groupSamAccountName);
+
+        return new GroupMemberOperationResult(true, $"Successfully removed ''{memberSamAccountName}'' from group ''{groupSamAccountName}''.");
+    }
+
     /// <summary>
     /// Searches for an object in Active Directory and returns its Distinguished Name.
     /// </summary>

@@ -113,4 +113,56 @@
             }
         </div>
     </section>
+
+    <!-- ============================================
+         REMOVE MEMBER FROM GROUP SECTION
+         ============================================ -->
+    <section class="form-section">
+        <div class="search-card">
+            <div class="card-header">
+                <div class="card-header-icon remove-member">&#128101;&#45;</div>
+                <div>
+                    <h2>Remove Member from Group</h2>
+                    <p class="card-description">Remove a user from an existing group</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="RemoveMemberGroupSamAccountName">Target Group samAccountName <span class="label-hint">— e.g. IT Department</span></label>
+                    <input type="text" id="RemoveMemberGroupSamAccountName" name="RemoveMemberGroupSamAccountName"
+                           value="@Model.RemoveMemberGroupSamAccountName" placeholder="Enter group samAccountName" />
+                </div>
+                <div class="form-group">
+                    <label for="RemoveMemberMemberSamAccountName">Member User samAccountName <span class="label-hint">— e.g. jsmith</span></label>
+                    <input type="text" id="RemoveMemberMemberSamAccountName" name="RemoveMemberMemberSamAccountName"
+                           value="@Model.RemoveMemberMemberSamAccountName" placeholder="Enter user samAccountName" />
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" name="Action" value="RemoveMember" class="btn btn-danger">
+                    <span>&#128101;&#45;</span> Remove Member
+                </button>
+            </div>
+
+            @if (Model.RemoveMemberResult != null)
+            {
+                @if (Model.RemoveMemberResult.Success)
+                {
+                    <div class="result-section">
+                        <h3>Remove Member Result <span class="result-badge success">Success</span></h3>
+                        <div class="result-message">
+                            <p>@Model.RemoveMemberResult.Message</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-error">
+                        <span class="alert-icon">&#9888;</span>
+                        <div><strong>Remove Member Failed:</strong> @Model.RemoveMemberResult.Message</div>
+                    </div>
+                }
+            }
+        </div>
+    </section>
 </form>

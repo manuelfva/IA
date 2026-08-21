@@ -78,6 +78,23 @@ public class GroupsModel : PageModel
     public GroupMemberOperationResult? AddMemberResult { get; set; }
 
     /// <summary>
+    /// The samAccountName of the group to remove a member from (for the Remove Member form).
+    /// </summary>
+    [BindProperty]
+    public string? RemoveMemberGroupSamAccountName { get; set; }
+
+    /// <summary>
+    /// The samAccountName of the user to remove as a member (for the Remove Member form).
+    /// </summary>
+    [BindProperty]
+    public string? RemoveMemberMemberSamAccountName { get; set; }
+
+    /// <summary>
+    /// Result message from the remove member operation.
+    /// </summary>
+    public GroupMemberOperationResult? RemoveMemberResult { get; set; }
+
+    /// <summary>
     /// The form action submitted by the user (SearchGroup or AddMember).
     /// Used to distinguish between multiple submit buttons in the same form.
     /// </summary>
@@ -104,6 +121,12 @@ public class GroupsModel : PageModel
         if (Action == "AddMember")
         {
             return OnPostAddMember();
+        }
+
+        // Route to RemoveMember handler when the Remove Member form was submitted.
+        if (Action == "RemoveMember")
+        {
+            return OnPostRemoveMember();
         }
 
         if (string.IsNullOrWhiteSpace(GroupSearchTerm))
@@ -180,6 +203,52 @@ public class GroupsModel : PageModel
             AddMemberResult = null;
             _logger.LogError(ex, "Error adding member to group {GroupSamAccountName}", AddMemberGroupSamAccountName);
             Error = $"Error adding member to group: {ex.Message}";
+        }
+
+        return Page();
+    }
+
+    /// <summary>
+    /// Handles POST requests for removing a member from a group.
+    /// </summary>
+    public IActionResult OnPostRemoveMember()
+    {
+        if (string.IsNullOrWhiteSpace(RemoveMemberGroupSamAccountName))
+        {
+            Error = "Please enter the samAccountName of the target group.";
+            return Page();
+        }
+
+        if (string.IsNullOrWhiteSpace(RemoveMemberMemberSamAccountName))
+        {
+            Error = "Please enter the samAccountName of the user to remove as a member.";
+            return Page();
+        }
+
+        try
+        {
+            RemoveMemberResult = _groupMembershipWriter.RemoveMember(RemoveMemberGroupSamAccountName, RemoveMemberMemberSamAccountName);
+            Error = null;
+
+            _logger.LogInformation("Successfully removed member via OnPostRemoveMember");
+        }
+        catch (GroupNotFoundException ex)
+        {
+            RemoveMemberResult = null;
+            _logger.LogError("Group not found during remove member: {SamAccountName}", RemoveMemberGroupSamAccountName);
+            Error = ex.Message;
+        }
+        catch (UserNotFoundException ex)
+        {
+            RemoveMemberResult = null;
+            _logger.LogError("User not found during remove member: {SamAccountName}", RemoveMemberMemberSamAccountName);
+            Error = ex.Message;
+        }
+        catch (DomainException ex)
+        {
+            RemoveMemberResult = null;
+            _logger.LogError(ex, "Error removing member from group {GroupSamAccountName}", RemoveMemberGroupSamAccountName);
+            Error = $"Error removing member from group: {ex.Message}";
         }
 
         return Page();
