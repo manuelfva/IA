@@ -23,7 +23,10 @@
             <a href="/" class="navbar-link">Home</a>
             <a href="/Users" class="navbar-link">Users</a>
             <a href="/Groups" class="navbar-link">Groups</a>
-            <span class="navbar-badge">Active Directory</span>
+        @{
+            var windowsName = System.Security.Principal.WindowsIdentity.GetCurrent()?.Name ?? string.Empty;
+        }
+        <span class="navbar-badge">@windowsName</span>
         </div>
     </nav>
 
@@ -34,7 +37,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <span>Test-IA Active Directory Lookup</span>
+        <span>Active Directory Identity Management</span>
         <span class="footer-divider">&middot;</span>
         <span>Powered by .NET 10 &amp; LDAP</span>
     </footer>
