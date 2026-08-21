@@ -18,6 +18,9 @@ output/
 **/bin/
 **/obj/
 
+# Archives
+*.zip
+
 # NuGet
 nuget.config
 packages.lock.json
