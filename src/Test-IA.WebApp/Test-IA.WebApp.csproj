@@ -4,9 +4,6 @@
     <ProjectReference Include="..\Test-IA.Application\Test-IA.Application.csproj" />
     <ProjectReference Include="..\Test-IA.Domain\Test-IA.Domain.csproj" />
     <ProjectReference Include="..\Test-IA.Logging\Test-IA.Logging.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="10.0.11" />
   </ItemGroup>
 

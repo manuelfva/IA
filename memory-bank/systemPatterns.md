@@ -1,4 +1,4 @@
-# System Patterns: Test-IA
+﻿# System Patterns: Test-IA
 
 ## Architecture
 
@@ -72,7 +72,7 @@ A generic `IAttributeMapper<TDto>` interface in the Application layer centralize
 - **Authorization pattern**: `IUserGroupAuthorizationService` interface in Domain layer, `UserGroupAuthorizationService` implementation in Application layer. Both ConsoleApp and WebApp reuse the same service. ConsoleApp fails fast on authorization failure; WebApp uses ASP.NET Core policy-based authorization.
 - **Group Membership Writer pattern**: `IGroupMembershipWriter` interface in Domain layer, `GroupMembershipWriterService` implementation in Application layer. Performs LDAP `ModifyRequest` with `DirectoryAttributeOperation.Add` to add a user's DN to a group's `member` attribute, and `DirectoryAttributeOperation.Delete` to remove a user's DN from a group's `member` attribute. WebApp Groups page uses this service via `OnPostAddMember()` and `OnPostRemoveMember()`.
 - **Navbar Identity Display**: `_Layout.cshtml` displays the current Windows user's identity (`DOMAIN\Username`) in the navbar badge using `WindowsIdentity.GetCurrent()?.Name` directly in the Razor view — no services, DTOs, or DI registrations required.
-
+- **Extensible Logging Sink Pattern**: `ILoggingSink` interface defines the pluggable contract for logging output targets. `LoggingService` delegates to `IEnumerable<ILoggingSink>`, enabling file, console, database, Event Log, and other sinks. `FileLoggingSink` implements thread-safe append mode with `FormatMessage` method that handles both numbered placeholders (`{0}`, `{1}`) and named placeholders (`{Key}`, `{Value}`) matching `ILogger` behavior. `LoggingPipelineFactory` reads `appsettings.json` `Logging.Sinks` section and instantiates configured sinks. ConsoleApp and WebApp both register file sinks via factory. Configuration structure: `Logging.Sinks.File.Path`, `Logging.Sinks.File.MinLogLevel`. Future sinks (Database, EventLog) are added by implementing `ILoggingSink` and extending the factory.
 - `GroupAttributeMapper` — implements `IAttributeMapper<GroupDto>`, maps `displayName` + `member` DN array
 - `UserUpdateAttributeMapper` — implements `IAttributeMapper<UserUpdateRequest>`, maps 10 user update attributes using correct LDAP attribute names
 

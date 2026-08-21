@@ -27,6 +27,7 @@
   - `ILoggerService` injected into `IndexModel` for error logging.
   - **Dynamic display**: `IAttributeMapper<UserDto>`, `IAttributeMapper<GroupDto>`, and `IAttributeMapper<UserUpdateRequest>` injected; `UserDisplayValues`, `GroupDisplayValues`, and `UpdateDisplayValues` properties populated in `OnPost()`; `Index.cshtml` uses `@foreach` loops over display dictionaries for all three operations. User Update card now supports all 10 LDAP attributes with dynamic form field rendering.
   - **Glassmorphism + Aurora UI**: Dark theme, animated aurora background, frosted glass components, gradient text, luminous buttons.
+   - **Extensible Logging Service**: `ILoggingSink` interface (pluggable contract), `FileLoggingSink` (thread-safe append mode), `ConsoleLoggingSink`, and `LoggingPipelineFactory` (reads `appsettings.json` `Logging.Sinks` section). `LoggingService` delegates to `IEnumerable<ILoggingSink>` — falls back to `ILogger<T>` only if no sinks registered. `FormatMessage` handles numbered (`{0}`) and named (`{Key}`) placeholders with `HasNumberedPlaceholders` guard against `FormatException` on literal curly braces. ConsoleApp and WebApp both configured with `Logging.Sinks.File` in appsettings.json. Build: 0 errors, 0 warnings. Tests: 25/25 passed.
   - CSS custom properties, `backdrop-filter: blur()`, `@keyframes` animations.
   - **Windows Authentication**: `AddNegotiate()` for Kerberos/NTLM.
   - **Policy-based authorization**: `AddPolicy("RequiredGroup")` with `GroupAuthorizationHandler` using `IServiceScopeFactory`.

@@ -37,8 +37,11 @@ public class Program
             builder.AddConsole();
         });
 
+        // Create logging sinks from configuration
+        var sinks = LoggingPipelineFactory.CreateSinks(configuration);
+
         // Register logging
-        services.AddSingleton<ILoggerService>(sp => new LoggingService(loggerFactory.CreateLogger<LoggingService>()));
+        services.AddSingleton<ILoggerService>(sp => new LoggingService(loggerFactory.CreateLogger<LoggingService>(), sinks));
         services.AddTestIAServices();
 
         // Register attribute mappers as singletons (stateless, no external dependencies)
