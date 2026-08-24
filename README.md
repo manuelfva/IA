@@ -4,20 +4,36 @@ A .NET 10.0 solution that demonstrates Active Directory user and group lookup se
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Layer Responsibilities](#layer-responsibilities)
-- [Projects](#projects)
-- [Public Services](#public-services)
-- [Dependency Injection](#dependency-injection)
-- [Configuration](#configuration)
-- [Getting Started](#getting-started)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Coding Standards](#coding-standards)
-- [Technology Stack](#technology-stack)
-- [Repository Structure](#repository-structure)
-- [Last Updated](#last-updated)
+- [Test-IA](#test-ia)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Architecture](#architecture)
+  - [Layer Responsibilities](#layer-responsibilities)
+  - [Projects](#projects)
+  - [Public Services](#public-services)
+    - [IGetADUserInfo](#igetaduserinfo)
+    - [IGetADGroupInfo](#igetadgroupinfo)
+    - [IGroupMembershipWriter](#igroupmembershipwriter)
+    - [IUserGroupAuthorizationService](#iusergroupauthorizationservice)
+    - [IUserWriter](#iuserwriter)
+  - [Dependency Injection](#dependency-injection)
+  - [Configuration](#configuration)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Console Application](#console-application)
+  - [Testing](#testing)
+  - [Deployment](#deployment)
+    - [Self-Contained Deployment Package](#self-contained-deployment-package)
+      - [Automated Publishing Script](#automated-publishing-script)
+      - [Manual Publishing](#manual-publishing)
+      - [Deployment Package Contents](#deployment-package-contents)
+      - [Deploying the Package](#deploying-the-package)
+      - [Running as a Windows Service (Production)](#running-as-a-windows-service-production)
+      - [Prerequisites for Deployment](#prerequisites-for-deployment)
+  - [Coding Standards](#coding-standards)
+  - [Technology Stack](#technology-stack)
+  - [Repository Structure](#repository-structure)
+  - [Last Updated](#last-updated)
 
 ## Overview
 
@@ -257,7 +273,6 @@ dotnet publish src/Test-IA.WebApp/Test-IA.WebApp.csproj `
 | `Test-IA.Logging.dll` + `.pdb` | Logging layer |
 | `appsettings.json` | Default configuration |
 | `appsettings.Development.json` | Development overrides |
-| `README-deploy.txt` | Deployment guide (extracted from zip) |
 | `wwwroot/` | Static web assets (CSS, JS) |
 | `coreclr.dll`, `hostfxr.dll` | .NET runtime (bundled) |
 
@@ -301,9 +316,20 @@ nssm start Test-IA.WebApp
 #### Prerequisites for Deployment
 
 - **Windows machine** joined to an Active Directory domain
-- **.NET 10.0 Runtime is NOT required** (bundled with the package)
+- **.NET 10.0 Runtime** is NOT required (bundled with this package)
 - Network access to at least one Domain Controller
-- User account running the app must have LDAP read access to the domain
+- User account running the app must have LDAP read access to the domain and must be authorized to update users and groups managed by the app
+- Must define SPNs for the user account running the app (PROTOCOL = HTTP and/or HTTPS):
+   ```powershell
+   setspn -S <PROTOCOL>/<SERVER> <DOMAIN>\<USER-SAMACCOUNTNAME>, for example: setspn -S http://covadonga-srv:5000
+   setspn -S <PROTOCOL>/<SERVER-FQDN> <DOMAIN>\<USER-SAMACCOUNTNAME>, for example: setspn -S https://covadonga-srv.asturmalaga.com:5000
+   ```
+- Add service URLs to the policy `Computer Configuration → Policies → Administrative Templates → Windows Components → Internet Explorer → Internet Control Panel → Security Page → Site to Zone Assignment List`:
+  ```
+  <PROTOCOL>://<SERVER>:<PORT>      1, for example: http://covadonga-srv:5000                   1 
+  <PROTOCOL>://<SERVER-FQDN>:<PORT> 1, for example: http://covadonga-srv.asturmalaga.com:5000   1 
+  ```
+- The server where the app is running must have an domain `inbound rule` to allow TCP and UDP `<PORT>` communication  
 
 ## Coding Standards
 
