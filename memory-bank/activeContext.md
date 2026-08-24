@@ -19,8 +19,8 @@ The project has been created with all core services implemented, a WebApp presen
 - **WebApp Section Redesign**: `Index.cshtml` restructured into two distinct sections (Users and Groups) with visual differentiation. Users section (purple accent) contains User Search + User Update cards. Groups section (green accent) contains Group Search card. Section headers include icons, titles, and descriptions. CSS uses gradient backgrounds, colored borders, and glow effects for visual distinction. Responsive grid layout adapts to different screen sizes. Build: 0 errors. Tests: 25/25 passed.
 - **Dynamic Console Display**: ConsoleApp uses `IAttributeMapper.GetDisplayValues()` to render attributes dynamically via `foreach` loops instead of hardcoded `LogInformation` calls. Adding new attributes only requires updating the mapper, not the console app.
 - **Dynamic WebApp Display**: WebApp `Index.cshtml` uses `@foreach` loops over `Model.UserDisplayValues` and `Model.GroupDisplayValues` instead of hardcoded HTML table rows. Both ConsoleApp and WebApp share the same `GetDisplayValues()` pattern, ensuring consistent dynamic rendering across all presentation layers.
+- **Footer Text Alignment Fix**: Fixed footer text alignment to left by adding `.footer-content { padding-left: 3rem; }` in `site.css` and restoring the `.footer-content` wrapper div in `_Layout.cshtml`. Root cause was a CSS syntax error in `.members-list li::before { content: '\''2022'; ... }` which caused the browser to stop parsing all subsequent CSS rules including the footer styles. Fixed the malformed content value to `content: '\2022';`. Build: 0 errors.
 
 ## Next Steps
 
-- Commit changes to version control.
-- Verify WebApp deployment configuration (ensure `AddHttpContextAccessor()` and Windows Authentication/Negotiate middleware are properly enabled in production).
+- Verify footer text alignment is working correctly in the browser.

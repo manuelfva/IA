@@ -797,7 +797,7 @@ body::after {
     gap: 0.5rem;
 }
 
-.members-list li::before { content: '\''2022'; color: var(--aurora-purple); font-weight: 700; font-size: 1.1rem; }
+.members-list li::before { content: '\2022'; color: var(--aurora-purple); font-weight: 700; font-size: 1.1rem; }
 .members-list li:last-child { border-bottom: none; }
 
 /* ============================================
