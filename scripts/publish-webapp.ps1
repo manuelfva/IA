@@ -1,4 +1,5 @@
-﻿.SYNOPSIS
+﻿<#
+.SYNOPSIS
     Publishes Test-IA.WebApp as a self-contained deployment package.
 .DESCRIPTION
     This script:
@@ -107,132 +108,10 @@ else {
 Write-Host "[6/6] Creating deployment package..." -ForegroundColor Yellow
 
 # Generate timestamp for the zip filename
-$CurrentDate = [DateTime]::Now.ToUniversalTime().ToDateTime([System.TimeZoneInfo]::FindSystemTimeZoneById("Romance Standard Time"))
+$CurrentDate = [System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, [System.TimeZoneInfo]::FindSystemTimeZoneById("Romance Standard Time"))
 $Timestamp = $CurrentDate.ToString("yyyyMMdd-HHmmss")
 $ZipFileName = "Test-IA.WebApp-deploy-${Timestamp}.zip"
 $ZipPath = Join-Path $ReleasesDir $ZipFileName
-
-# Create README-deploy.txt content
-$ReadmeContent = @"
-# Test-IA.WebApp Deployment Guide
-
-## Overview
-
-This is a self-contained deployment of Test-IA.WebApp, an ASP.NET Core Razor Pages application
-for Active Directory user and group information retrieval.
-
-## Prerequisites
-
-- **Windows machine** joined to an Active Directory domain
-- **.NET 10.0 Runtime** is NOT required (bundled with this package)
-- Network access to at least one Domain Controller
-- User account running the app must have LDAP read access to the domain
-
-## Deployment Steps
-
-1. **Extract** this package to your desired installation folder:
-   ```powershell
-   Expand-Archive Test-IA.WebApp-deploy-*.zip -DestinationPath "C:\WebApps\Test-IA"
-   ```
-
-2. **Configure** (optional): Edit `appsettings.json` to override:
-   - `Authorization.RequiredGroup`: AD group required for access
-   - `Logging.Sinks`: Additional logging targets
-   - `Logging:LogLevel`: Per-namespace log levels
-
-3. **Run** the application:
-   ```powershell
-   cd "C:\WebApps\Test-IA"
-   .\Test-IA.WebApp.exe
-   ```
-
-   The application will start on the URLs configured in `launchSettings.json`
-   (typically `http://localhost:5000` and `https://localhost:5001`).
-
-4. **Access** the application in a browser:
-   ```
-   http://localhost:5000
-   ```
-
-## Running as a Windows Service (Production)
-
-To run as a background service:
-
-1. Install `nssm` (Non-Sucking Service Manager):
-   ```powershell
-   choco install nssm
-   ```
-
-2. Register the service:
-   ```powershell
-   nssm install Test-IA.WebApp "C:\WebApps\Test-IA\Test-IA.WebApp.exe"
-   nssm set Test-IA.WebApp Directory "C:\WebApps\Test-IA"
-   nssm start Test-IA.WebApp
-   ```
-
-## Configuration
-
-The application reads configuration from:
-
-1. `appsettings.json` (bundled)
-2. `appsettings.{Environment}.json` (e.g., `appsettings.Production.json`)
-3. Environment variables
-4. Command-line arguments
-
-### Key Configuration Keys
-
-| Key | Default | Description |
-|-----|---------|-------------|
-| `Authorization:RequiredGroup` | `Domain Admins` | AD group members can access the app |
-| `Logging:LogLevel:Default` | `Information` | Default log level |
-| `Logging:LogLevel:TestIA` | `Debug` | Log level for Test-IA namespace |
-
-## Troubleshooting
-
-### Application fails to start
-
-- Ensure the machine is joined to the Active Directory domain:
-  ```powershell
-  Get-CimInstance Win32_ComputerSystem | Select-Object PartOfDomain, Domain
-  ```
-- Check Windows event logs for detailed error messages.
-
-### Authentication fails
-
-- Ensure your user account is a member of the required AD group (default: `Domain Admins`).
-- Verify network access to a Domain Controller:
-  ```powershell
-  nslookup $(Get-CimInstance Win32_ComputerSystem).Domain
-  ```
-
-### LDAPS / Secure LDAP
-
-If your domain requires LDAPS, ensure the Domain Controller has a valid certificate and
-the machine trusts the issuing CA. The application will automatically use LDAPS when
-configured.
-
-## Package Contents
-
-| File/Folder | Description |
-|-------------|-------------|
-| `Test-IA.WebApp.exe` | Self-contained executable (includes .NET runtime) |
-| `appsettings.json` | Default configuration |
-| `appsettings.Development.json` | Development overrides |
-| `logs/` | Application log directory |
-| `wwwroot/` | Static web assets (CSS, JS) |
-| `Pages/` | Razor Pages (embedded) |
-
-## Support
-
-For issues, check the application logs in the `logs/` directory or contact the development team.
-
----
-Last Updated: $Timestamp
-"@
-
-# Write README-deploy.txt
-$ReadmePath = Join-Path $PublishDir "README-deploy.txt"
-Set-Content -Path $ReadmePath -Value $ReadmeContent -Encoding UTF8
 
 # Create the zip file
 if (Test-Path $ZipPath) {

@@ -1,7 +1,0 @@
-
-REGLAS GLOBALES EN: C:\Users\MFVA649T\.cline\rules
-
-INICIAR NUEVA SESION
---------------------
-1. >/clear 
-2. Ejecutar: >Follow your custom instructions

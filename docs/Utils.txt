@@ -1,0 +1,67 @@
+Test-NetConnection almayate-srv -Port 5000
+
+Invoke-WebRequest http://almayate-srv:5000
+Invoke-WebRequest http://almayate-srv:7077 -UseDefaultCredentials
+curl.exe -v http://almayate-srv:5000/
+
+Get-NetTCPConnection -LocalPort 5000 -State Listen | Select-Object LocalAddress,LocalPort,OwningProcess
+Get-Process -Id <PID>
+Get-Process -Id <PID> | Select-Object Id,ProcessName,Path
+
+curl.exe --negotiate -u : -v http://almayate-srv:7077/
+
+Cliente
+   │
+   │ HTTP://almayate-srv:7077
+   ▼
+Kestrel
+   │
+   │ Negotiate
+   ▼
+Kerberos
+   │
+   │ solicita ticket para HTTP/almayate-srv
+   ▼
+AD
+   │
+   │ encuentra SPN
+   ▼
+❌ Principal incorrecto
+
+setspn -Q HTTP/almayate-srv
+
+Get-Process -Id 7128 -IncludeUserName | Select-Object Id,ProcessName,UserName
+
+setspn -L ASTURMAL\Administrador
+setspn -S HTTP/almayate-srv ASTURMAL\Administrador
+setspn -S HTTP/almayate-srv.asturmal.com ASTURMAL\Administrador
+setspn -Q HTTP/almayate-srv
+
+En cliente:
+klist purge
+curl.exe --negotiate -u : -v http://almayate-srv:7077/
+
+> .\Test-IA.WebApp.exe --urls "http://*:5000"
+
+RESUMEN: Para que funcione la autentificación integrada hay que hacer dos cosas:
+1. Definir SPNs: 
+   >setspn -S HTTP/covadonga-srv ASTURMAL\Administrador
+   >setspn -S HTTP/covadonga-srv.asturmalaga.com ASTURMAL\Administrador
+   >setspn -Q HTTP/covadonga-srv
+      Comprobando el dominio DC=asturmalaga,DC=com
+      CN=Administrador,OU=Admins,DC=asturmalaga,DC=com
+        HTTP/covadonga-srv.asturmalaga.com
+        HTTP/covadonga-srv
+
+      Se encontró un SPN existente.
+
+2. Añadir el servidor en la zona de intranet mediante políticas: 
+
+   Intranet Zone Settings -> Configuración del equipo -> Directivas -> Plantillas administrativas -> Componentes de Windows -> Internet Explorer -> 
+   Panel de control de Internet -> Página de seguridad -> Lista de asignación de sitio a zona
+
+   Añadimos: 
+      http://covadonga-srv:5000 1
+      http://covadonga-srv.asturmalaga.com:5000 1
+
+3. Crear regla inbound TCP y UDP para el puerto configurado en el servidor donde instalemos la web.
