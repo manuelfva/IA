@@ -75,6 +75,9 @@ public class Program
         app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthentication();
+
+        app.UseStatusCodePagesWithReExecute("/AccessDenied", "?statusCode={0}");
+
         app.UseAuthorization();
 
         app.MapRazorPages();

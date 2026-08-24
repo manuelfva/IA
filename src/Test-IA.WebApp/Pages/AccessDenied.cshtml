@@ -1,0 +1,44 @@
+@page
+@model TestIA.WebApp.Pages.AccessDeniedModel
+@{
+    ViewData["Title"] = "Access Denied - Test-IA";
+}
+
+<!-- Aurora Background Orbs -->
+<div class="aurora-wrapper">
+    <div class="orb orb--green"></div>
+    <div class="orb orb--pink"></div>
+</div>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="/" class="navbar-brand">
+        <span class="brand-icon">AD</span>
+        <span>Test-IA</span>
+    </a>
+    <div class="navbar-links">
+        <a href="/" class="navbar-link">Home</a>
+        <a href="/Users" class="navbar-link">Users</a>
+        <a href="/Groups" class="navbar-link">Groups</a>
+        <span class="navbar-badge">@Model.UserName</span>
+    </div>
+</nav>
+
+<!-- Access Denied Content -->
+<main class="main-content">
+    <div class="access-denied-card">
+        <div class="access-denied-icon">&#128683;</div>
+        <h1 class="access-denied-title">Access Denied</h1>
+        <p class="access-denied-message">
+            Your account <strong>@Model.UserName</strong> is not a member of the required group
+            <strong>@Model.RequiredGroup</strong> (HTTP @Model.HttpStatusCode).
+        </p>
+        <p class="access-denied-submessage">
+            Please contact your Active Directory administrator to request access or verify your group membership.
+        </p>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+</footer>

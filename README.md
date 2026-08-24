@@ -37,7 +37,7 @@ A .NET 10.0 solution that demonstrates Active Directory user and group lookup se
 
 ## Overview
 
-**Test-IA** is a .NET 10.0 solution that demonstrates Active Directory (AD DS) user and group information retrieval using real LDAP connections with Windows Integrated Authentication. The solution includes **group-based authorization** that restricts access to users who are members of a configured Active Directory group (e.g., "Employees of IT"). Users can **add and remove members from groups** via the WebApp Groups page.
+**Test-IA** is a .NET 10.0 solution that demonstrates Active Directory (AD DS) user and group information retrieval using real LDAP connections with Windows Integrated Authentication. The solution includes **group-based authorization** that restricts access to users who are members of a configured Active Directory group (e.g., "Employees of IT"). Unauthorized users are redirected to a friendly **Access Denied** page. Users can **add and remove members from groups** via the WebApp Groups page.
 
 ## Architecture
 
@@ -379,7 +379,7 @@ Test-IA/
 
 ## Last Updated
 
-21/08/2026 20:03
+24/08/2026 14:55
 
 
 
