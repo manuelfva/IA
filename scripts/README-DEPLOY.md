@@ -20,7 +20,7 @@ This is a self-contained deployment of Test-IA.WebApp, an ASP.NET Core Razor Pag
   <PROTOCOL>://<SERVER>:<PORT>      1, for example: http://covadonga-srv:5000                   1 
   <PROTOCOL>://<SERVER-FQDN>:<PORT> 1, for example: http://covadonga-srv.asturmalaga.com:5000   1 
   ```
-- The server where the app is running must have an domain `inbound rule` to allow TCP and UDP <PORT> communication  
+- The server where the app is running must have an domain `inbound rule` to allow TCP and UDP `<PORT>` communication  
 
 ## Deployment Steps
 
@@ -36,7 +36,7 @@ This is a self-contained deployment of Test-IA.WebApp, an ASP.NET Core Razor Pag
 
 3. **Run** the application:
 
-   To make the ASP.NET Core web app listen on <PROTOCOL>://<SERVER>:<PORT>, we need to understand how ASP.NET Core determines binding URLs.
+   To make the ASP.NET Core web app listen on `<PROTOCOL>://<SERVER>:<PORT>`, we need to understand how ASP.NET Core determines binding URLs.
 
    ***¿How ASP.NET Core Reads URLs?***   
 
@@ -46,7 +46,7 @@ This is a self-contained deployment of Test-IA.WebApp, an ASP.NET Core Razor Pag
    3. launchSettings.json (only when running via dotnet run)
    4. appsettings.json — NOT read by default unless explicitly wired up
 
-   Since this is a published/self-contained deployment, launchSettings.json is not used. 
+   Since this is a published/self-contained deployment, launchSettings.json is not used.  
    And by default, ASP.NET Core does not read URL bindings from appsettings.json.
 
    There are three viable approaches:
@@ -69,7 +69,7 @@ This is a self-contained deployment of Test-IA.WebApp, an ASP.NET Core Razor Pag
      No `appsettings.json` change needed.
 
    - Update `appsettings.json + Code Change`: 
--    
+     
      Add a Urls section to `appsettings.json` and modify the `Program.cs` to explicitly read it from configuration.
 
      This requires a code change in the `WebApp project`.
@@ -102,8 +102,8 @@ The application reads configuration from:
 1. `appsettings.json` (bundled)
 2. `appsettings.{Environment}.json` (e.g., `appsettings.Production.json`)
 3. Environment variables:
-   - `ASPNETCORE_ENVIRONMENT` is the only environment variable explicitly read in code (app.Environment.IsDevelopment()).
-   - `ASPNETCORE_URLS` is consumed by Kestrel automatically — no application code reads it.
+   - `ASPNETCORE_ENVIRONMENT` is the only environment variable explicitly read in code (`app.Environment.IsDevelopment()`).
+   - `ASPNETCORE_URLS` is consumed by `Kestrel` automatically — no application code reads it.
 4. Command-line arguments
 
 ### Key Configuration Keys
@@ -134,9 +134,8 @@ The application reads configuration from:
 
 ### LDAPS / Secure LDAP
 
-If your domain requires LDAPS, ensure the Domain Controller has a valid certificate and
-the machine trusts the issuing CA. The application will automatically use LDAPS when
-configured.
+If your domain requires LDAPS, ensure the Domain Controller has a valid certificate and the machine trusts the issuing CA.  
+The application will automatically use LDAPS when configured.
 
 ## Package Contents
 
