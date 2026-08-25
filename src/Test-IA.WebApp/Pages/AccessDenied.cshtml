@@ -1,26 +1,37 @@
 @page
 @model TestIA.WebApp.Pages.AccessDeniedModel
 @{
-    ViewData["Title"] = "Access Denied - Test-IA";
+    Layout = null;
+    ViewData["Title"] = "Access Denied";
 }
 
-<!-- Aurora Background Orbs -->
-<div class="aurora-wrapper">
-    <div class="orb orb--green"></div>
-    <div class="orb orb--pink"></div>
-</div>
-
-<!-- Access Denied Content -->
-<main class="main-content">
-    <div class="access-denied-card">
-        <div class="access-denied-icon">&#128683;</div>
-        <h1 class="access-denied-title">Access Denied</h1>
-        <p class="access-denied-message">
-            Your account <strong>@Model.UserName</strong> is not a member of the required group
-            <strong>@Model.RequiredGroup</strong> (HTTP @Model.HttpStatusCode).
-        </p>
-        <p class="access-denied-submessage">
-            Please contact your Active Directory administrator to request access or verify your group membership.
-        </p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <!-- Aurora Background Orbs -->
+    <div class="aurora-wrapper">
+        <div class="orb orb--green"></div>
+        <div class="orb orb--pink"></div>
     </div>
-</main>
+
+    <!-- Access Denied Content -->
+    <main class="main-content">
+        <div class="access-denied-card">
+            <div class="access-denied-icon">&#128683;</div>
+            <h1 class="access-denied-title">Access Denied</h1>
+            <p class="access-denied-message">
+                Your account does not have permission to access this application.
+            </p>
+            <p class="access-denied-submessage">
+                Please contact your Active Directory administrator to request access.
+            </p>
+        </div>
+    </main>
+</body>
+</html>
