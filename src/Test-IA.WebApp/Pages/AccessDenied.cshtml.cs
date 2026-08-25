@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
@@ -11,6 +12,7 @@ namespace TestIA.WebApp.Pages;
 /// Displays a friendly message when a user is authenticated but not authorized to access the application.
 /// The status code is passed via query string by the StatusCodePages middleware.
 /// </summary>
+[AllowAnonymous]
 public class AccessDeniedModel : PageModel
 {
     private readonly AuthorizationSettings _settings;

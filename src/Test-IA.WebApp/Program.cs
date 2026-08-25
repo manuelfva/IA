@@ -67,19 +67,28 @@ public class Program
 
         if (!app.Environment.IsDevelopment())
         {
-            app.UseHttpsRedirection();
+            app.UseHttpsRedirection(); 
             app.UseExceptionHandler("/Error");
             app.UseHsts();
         }
 
         app.UseStaticFiles();
         app.UseRouting();
+
+        app.UseStatusCodePages(async context =>
+        {
+            if (context.HttpContext.Response.StatusCode == StatusCodes.Status403Forbidden)
+            {
+                context.HttpContext.Response.Redirect("/AccessDenied");
+            }
+
+            await Task.CompletedTask;
+        });
+
         app.UseAuthentication();
-
-        app.UseStatusCodePagesWithReExecute("/AccessDenied", "?statusCode={0}");
-
         app.UseAuthorization();
 
+        // app.UseStatusCodePagesWithReExecute("/AccessDenied", "?statusCode
         app.MapRazorPages();
 
         app.Run();
