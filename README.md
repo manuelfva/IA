@@ -1,4 +1,4 @@
-# Test-IA
+﻿# Test-IA
 
 A .NET 10.0 solution that demonstrates Active Directory user and group lookup services using real LDAP connections with Windows Integrated Authentication.
 
@@ -74,7 +74,7 @@ graph TB
 | **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering. Includes `UserAttributeMapper` (14 LDAP attributes), `GroupAttributeMapper`, `UserUpdateAttributeMapper`, `GroupMembershipWriterService` (LDAP modify operations for adding group members), `ICurrentUser` implementations (`ConsoleCurrentUser`, `WebCurrentUser`) for identity resolution, and `CurrentUserMockHelper` for test mocking. |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
 | **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations with dynamic attribute display via `GetDisplayValues()` |
-| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()` for User, Group, and Update operations. User Search panel displays all 14 LDAP attributes dynamically. User Update card supports all 10 LDAP attributes with dynamic form field rendering. **Groups.cshtml** dedicated page for group search, adding members to groups, and removing members from groups via `IGroupMembershipWriter` (single form with `Action` button routing). Two distinct sections (Users and Groups) with visual differentiation. Glassmorphism + Aurora UI. Navbar badge displays the current Windows user's identity (`DOMAIN\\Username`) via `WindowsIdentity.GetCurrent()?.Name`. Logging service uses extensible sink pattern (`ILoggingSink`) � file, console, database, Event Log sinks are pluggable via `appsettings.json` `Logging.Sinks` section. |
+| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()` for User, Group, and Update operations. User Search panel displays all 14 LDAP attributes dynamically. User Update card supports all 10 LDAP attributes with dynamic form field rendering. **Groups.cshtml** dedicated page for group search, adding members to groups, and removing members from groups via `IGroupMembershipWriter` (single form with `Action` button routing). Two distinct sections (Users and Groups) with visual differentiation. Glassmorphism + Aurora UI. Navbar badge displays the current Windows user's identity (`DOMAIN\\Username`) via `WindowsIdentity.GetCurrent()?.Name`. Logging service uses extensible sink pattern (`ILoggingSink`) → file, console, database, Event Log sinks are pluggable via `appsettings.json` `Logging.Sinks` section. |
 
 ## Projects
 
@@ -106,8 +106,8 @@ Retrieves Active Directory group information by `samAccountName`.
 Adds or removes a user as a member of an Active Directory group via LDAP modify operations.
 
 **Methods:**
-- `AddMember(groupSamAccountName, memberSamAccountName)` � Adds a user as a member to a group.
-- `RemoveMember(groupSamAccountName, memberSamAccountName)` � Removes a user from a group.
+- `AddMember(groupSamAccountName, memberSamAccountName)` → Adds a user as a member to a group.
+- `RemoveMember(groupSamAccountName, memberSamAccountName)` → Removes a user from a group.
 
 **Parameters:** `groupSamAccountName`, `memberSamAccountName`
 
@@ -119,7 +119,7 @@ Checks whether the current Windows user is a member of a configured Active Direc
 
 Uses `ICurrentUser` abstraction for identity resolution: `ConsoleCurrentUser` reads from `WindowsIdentity.GetCurrent()`, `WebCurrentUser` reads from `HttpContext.User`. Both extract the short `samAccountName` (after the last `\`) required by LDAP `sAMAccountName` searches.
 
-**Returns:** `bool` � `true` if the user is a group member, `false` otherwise.
+**Returns:** `bool` → `true` if the user is a group member, `false` otherwise.
 
 ### IUserWriter
 
@@ -148,7 +148,7 @@ All services are registered via `ServiceCollectionExtensions.AddTestIAServices()
 
 - **ConsoleApp:** `appsettings.json` and `appsettings.Development.json` with structured logging configuration via `Microsoft.Extensions.Configuration.Json`.
 - **WebApp:** ASP.NET Core default configuration (`appsettings.json`, `appsettings.Development.json`, environment variables).
-- **Authorization:** `Authorization.RequiredGroup` in `appsettings.json` � the AD group `sAMAccountName` that users must be a member of to access the application.
+- **Authorization:** `Authorization.RequiredGroup` in `appsettings.json` → the AD group `sAMAccountName` that users must be a member of to access the application.
 
 ## Getting Started
 
@@ -195,11 +195,11 @@ dotnet test
 ```
 
 **Test Categories:**
-- **LoggingServiceTests** (7 tests) � Constructor validation, null message handling, valid message handling
-- **GetADUserInfoServiceTests** (3 tests) � Discovery failure, null/empty samAccountName
-- **GetADGroupInfoServiceTests** (3 tests) � Discovery failure, null/empty samAccountName
-- **MissingGroupExceptionTests** (3 tests) � Exception construction, inheritance from DomainException
-- **UserGroupAuthorizationServiceTests** (6 tests) � Discovery failure, constructor validation, null dependency checks
+- **LoggingServiceTests** (7 tests) → Constructor validation, null message handling, valid message handling
+- **GetADUserInfoServiceTests** (3 tests) → Discovery failure, null/empty samAccountName
+- **GetADGroupInfoServiceTests** (3 tests) → Discovery failure, null/empty samAccountName
+- **MissingGroupExceptionTests** (3 tests) → Exception construction, inheritance from DomainException
+- **UserGroupAuthorizationServiceTests** (6 tests) → Discovery failure, constructor validation, null dependency checks
 
 > Tests pending execution.
 
@@ -207,7 +207,7 @@ dotnet test
 
 ### Self-Contained Deployment Package
 
-The solution supports **self-contained deployment** � the published package includes the full .NET 10.0 runtime, so no runtime installation is required on the target machine.
+The solution supports **self-contained deployment** → the published package includes the full .NET 10.0 runtime, so no runtime installation is required on the target machine.
 
 #### Automated Publishing Script
 
@@ -324,7 +324,7 @@ nssm start Test-IA.WebApp
    setspn -S <PROTOCOL>/<SERVER> <DOMAIN>\<USER-SAMACCOUNTNAME>, for example: setspn -S http://covadonga-srv:5000
    setspn -S <PROTOCOL>/<SERVER-FQDN> <DOMAIN>\<USER-SAMACCOUNTNAME>, for example: setspn -S https://covadonga-srv.asturmalaga.com:5000
    ```
-- Add service URLs to the policy `Computer Configuration ? Policies ? Administrative Templates ? Windows Components ? Internet Explorer ? Internet Control Panel ? Security Page ? Site to Zone Assignment List`:
+- Add service URLs to the policy `Computer Configuration -> Policies -> Administrative Templates -> Windows Components -> Internet Explorer -> Internet Control Panel -> Security Page -> Site to Zone Assignment List`:
   ```
   <PROTOCOL>://<SERVER>:<PORT>      1, for example: http://covadonga-srv:5000                   1 
   <PROTOCOL>://<SERVER-FQDN>:<PORT> 1, for example: http://covadonga-srv.asturmalaga.com:5000   1 

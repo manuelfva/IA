@@ -87,3 +87,5 @@ The codebase is complete with both ConsoleApp and WebApp presentation layers, At
 
 - **Fix**: AccessDenied Page Security Refactoring — Refactored `AccessDenied.cshtml` to be completely independent from `_Layout.cshtml` to prevent information leakage. Added `Layout = null` with full standalone HTML structure. Removed all sensitive data exposure (`UserName`, `RequiredGroup`, `HttpStatusCode`). Simplified `AccessDeniedModel` to minimal implementation. Updated `Program.cs` to stop passing `userName` query string. Build: 0 errors, 0 warnings. Tests: 26/26 passed.
 
+- **Fix**: README.md UTF-8 Replacement Characters — Fixed 11 occurrences of U+FFFD (bytes 0xEF 0xBF 0xBD) replaced with right arrow (U+2192). Affected: Test Categories, Public Services, Deployment, Layer Responsibilities, Configuration sections. Verified 0 remaining.
+
