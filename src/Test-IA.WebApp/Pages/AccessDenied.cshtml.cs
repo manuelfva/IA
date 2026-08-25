@@ -40,12 +40,26 @@ public class AccessDeniedModel : PageModel
     public string RequiredGroup => _settings.RequiredGroup;
 
     /// <summary>
-    /// Gets the current user's identity name.
+    /// Gets the current user's identity name. Prefers the userName query string parameter
+    /// (passed by the StatusCodePages middleware redirect), falling back to the HTTP context.
     /// </summary>
-    public string UserName => _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? string.Empty;
+    public string UserName
+    {
+        get
+        {
+            var queryUserName = Request.Query["userName"].ToString();
+            if (!string.IsNullOrEmpty(queryUserName))
+            {
+                return queryUserName;
+            }
+
+            return _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? string.Empty;
+        }
+    }
 
     /// <summary>
-    /// Called by the Razor Pages framework. Initializes the status code from the query string.
+    /// Called by the Razor Pages framework. Initializes the status code from the query string
+    /// and stores the username in ViewData for use in the shared layout.
     /// </summary>
     public void OnGet()
     {
@@ -53,5 +67,7 @@ public class AccessDeniedModel : PageModel
         {
             HttpStatusCode = code;
         }
+
+        ViewData["UserName"] = UserName;
     }
 }

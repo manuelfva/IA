@@ -79,7 +79,8 @@ public class Program
         {
             if (context.HttpContext.Response.StatusCode == StatusCodes.Status403Forbidden)
             {
-                context.HttpContext.Response.Redirect("/AccessDenied");
+                var userName = context.HttpContext.User?.Identity?.Name ?? "Unknown";
+                context.HttpContext.Response.Redirect($"/AccessDenied?userName={Uri.EscapeDataString(userName)}");
             }
 
             await Task.CompletedTask;
