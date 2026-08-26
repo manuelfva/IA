@@ -11,14 +11,14 @@ using TestIA.Logging;
 /// Main entry point for the Test-IA console application.
 /// Demonstrates the real execution of Active Directory user and group lookup services.
 /// </summary>
-public class Program
+public static class Program
 {
     /// <summary>
     /// The main entry method. Discovers the Active Directory environment, registers services,
     /// and demonstrates the execution of <see cref="IGetADUserInfo"/> and <see cref="IGetADGroupInfo"/>.
     /// </summary>
     /// <param name="args">Command-line arguments (not used).</param>
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         // Load configuration from appsettings.json and appsettings.Development.json
         var basePath = Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? Directory.GetCurrentDirectory();
@@ -51,15 +51,9 @@ public class Program
 
         // Register configuration-based services
         services.Configure<AuthorizationSettings>(configuration.GetSection("Authorization"));
+        services.Configure<DemoSettings>(configuration.GetSection("Demo"));
 
-        // Register ILogger<T> for all services that need it
-        services.AddSingleton<ILogger<LoggingService>>(_ => loggerFactory.CreateLogger<LoggingService>());
-        services.AddSingleton<ILogger<GetADUserInfoService>>(_ => loggerFactory.CreateLogger<GetADUserInfoService>());
-        services.AddSingleton<ILogger<GetADGroupInfoService>>(_ => loggerFactory.CreateLogger<GetADGroupInfoService>());
-        services.AddSingleton<ILogger<ADDomainDiscoveryService>>(_ => loggerFactory.CreateLogger<ADDomainDiscoveryService>());
-        services.AddSingleton<ILogger<UserGroupAuthorizationService>>(_ => loggerFactory.CreateLogger<UserGroupAuthorizationService>());
-
-        // Build the service provider
+        // Build the service provider — ILogger<T> is resolved automatically from loggerFactory.
         using var serviceProvider = services.BuildServiceProvider();
 
         var loggerService = serviceProvider.GetRequiredService<ILoggerService>();
@@ -69,6 +63,7 @@ public class Program
         var groupInfoService = serviceProvider.GetRequiredService<IGetADGroupInfo>();
         var authorizationService = serviceProvider.GetRequiredService<IUserGroupAuthorizationService>();
         var authorizationSettings = serviceProvider.GetRequiredService<IOptions<AuthorizationSettings>>();
+        var demoSettings = serviceProvider.GetRequiredService<IOptions<DemoSettings>>();
 
         // Check authorization before proceeding
         var requiredGroup = authorizationSettings.Value.RequiredGroup;
@@ -109,8 +104,14 @@ public class Program
         loggerService.LogInformation("=== Test-IA Console Application ===");
         loggerService.LogInformation("Starting Active Directory service demonstration...");
 
-        // Example 1: GetADUserInfo
-        const string userSamAccountName = "MFVA649T";
+        // Example 1: GetADUserInfo — read from configuration, not hardcoded.
+        var userSamAccountName = demoSettings.Value.UserSamAccountName;
+        if (string.IsNullOrWhiteSpace(userSamAccountName))
+        {
+            loggerService.LogError("Demo configuration is missing: 'Demo:UserSamAccountName' is not set in appsettings.json.");
+            return;
+        }
+
         try
         {
             loggerService.LogInformation("Calling GetADUserInfo with samAccountName: {SamAccountName}", userSamAccountName);
@@ -136,12 +137,18 @@ public class Program
 
         loggerService.LogInformation("");
 
-        // Example 2: GetADGroupInfo
-        const string groupSamAccountName = "employees of MADRID";
+        // Example 2: GetADGroupInfo — read from configuration, not hardcoded.
+        var groupSamAccountName = demoSettings.Value.GroupSamAccountName;
+        if (string.IsNullOrWhiteSpace(groupSamAccountName))
+        {
+            loggerService.LogError("Demo configuration is missing: 'Demo:GroupSamAccountName' is not set in appsettings.json.");
+            return;
+        }
+
         try
         {
             loggerService.LogInformation("Calling GetADGroupInfo with samAccountName: {SamAccountName}", groupSamAccountName);
-            var groupInfo = groupInfoService.GetGroup(groupSamAccountName);
+            var groupInfo = await groupInfoService.GetGroupAsync(groupSamAccountName);
             loggerService.LogInformation("Group found:");
 
             // Dynamically render group attributes using the mapper's GetDisplayValues method.

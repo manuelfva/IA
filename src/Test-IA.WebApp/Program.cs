@@ -23,13 +23,9 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Register logging service
         // Create logging sinks from configuration
         var sinks = LoggingPipelineFactory.CreateSinks(builder.Configuration);
-        var sinkCount = sinks.Count();
         builder.Logging.AddConsole().SetMinimumLevel(LogLevel.Information);
-
-        // Register logging service
         builder.Services.AddSingleton<ILoggerService>(sp =>
             new LoggingService(sp.GetRequiredService<ILogger<LoggingService>>(), sinks));
 
@@ -88,7 +84,6 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
 
-        // app.UseStatusCodePagesWithReExecute("/AccessDenied", "?statusCode
         app.MapRazorPages();
 
         app.Run();

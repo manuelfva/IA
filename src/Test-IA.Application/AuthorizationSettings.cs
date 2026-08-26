@@ -8,7 +8,6 @@ namespace TestIA.Application;
 /// Active Directory group that users must be a member of to access the application.
 /// </para>
 /// </summary>
-/// <remarks>
 /// <b>Configuration key:</b> <c>Authorization:RequiredGroup</c>
 /// <para>
 /// <b>Usage:</b> Injected into <see cref="UserGroupAuthorizationService"/> via <c>IOptions&lt;AuthorizationSettings&gt;</c>.

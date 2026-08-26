@@ -12,7 +12,7 @@ namespace TestIA.Application;
 /// This service performs LDAP-based group membership checks by:
 /// <list type="number">
 ///   <item><description>Obtaining the current Windows user identity.</description></item>
-///   <description>Discovering the Active Directory environment (domain, DC, Base DN).</description>
+///   <item><description>Discovering the Active Directory environment (domain, DC, Base DN).</description></item>
 ///   <item><description>Verifying that the target group exists in Active Directory.</description></item>
 ///   <item><description>Locating the current user's Distinguished Name via LDAP search.</description></item>
 ///   <item><description>Checking if the user's DN appears in the group's <c>member</c> attribute.</description></item>
@@ -118,21 +118,22 @@ public class UserGroupAuthorizationService : IUserGroupAuthorizationService
             return false;
         }
 
-        // Extract the user's logon name from the DOMAIN\Username format.
-        var userSamAccountNameShort = userSamAccountName.Split('\\')[1];
+        // Extract the user's logon name from the DOMAIN\\Username or user@domain.com format.
+        var userSamAccountNameShort = userSamAccountName.Contains('\\')
+            ? userSamAccountName.Split('\\')[1]
+            : userSamAccountName.Contains('@')
+                ? userSamAccountName.Split('@')[0]
+                : userSamAccountName;
         _logger.LogInformation("Current user identity: {UserSamAccountName}", userSamAccountNameShort);
 
-        // Step 2: Discover the Active Directory environment
         // Step 2: Discover the Active Directory environment (domain, DC, Base DN).
         var (domainName, domainController, baseDN) = _discovery.Discover();
         _logger.LogInformation("Using Domain Controller: {DomainController}, Base DN: {BaseDN}", domainController, baseDN);
 
-        // Step 3: Verify the authorization group exists
         // Step 3: Verify the authorization group exists in Active Directory.
         // Throws MissingGroupException if the group does not exist.
         var groupDn = VerifyGroupExists(groupName, domainController, baseDN);
 
-        // Step 4: Get the current user's Distinguished Name via LDAP search
         // Step 4: Get the current user's Distinguished Name via LDAP search.
         var userDn = GetUserDistinguishedName(userSamAccountNameShort, domainController, baseDN);
         if (string.IsNullOrEmpty(userDn))

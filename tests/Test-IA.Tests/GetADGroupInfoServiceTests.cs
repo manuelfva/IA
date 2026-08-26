@@ -21,10 +21,10 @@ public class GetADGroupInfoServiceTests
     }
 
     /// <summary>
-    /// Tests that GetGroup throws DomainException when the discovery service throws a DomainException.
+    /// Tests that GetGroupAsync throws DomainException when the discovery service throws a DomainException.
     /// </summary>
     [Fact]
-    public void GetGroup_WhenDiscoveryFails_ThrowsDomainException()
+    public async Task GetGroupAsync_WhenDiscoveryFails_ThrowsDomainException()
     {
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryService(new DomainException("Not joined to a domain."));
@@ -33,17 +33,17 @@ public class GetADGroupInfoServiceTests
         var service = new GetADGroupInfoService(discoveryService, groupMapper, logger);
 
         // Act
-        var act = () => service.GetGroup("testgroup");
+        var act = async () => await service.GetGroupAsync("testgroup");
 
         // Assert
-        act.Should().Throw<DomainException>().WithMessage("Not joined to a domain.");
+        await act.Should().ThrowAsync<DomainException>().WithMessage("Not joined to a domain.");
     }
 
     /// <summary>
-    /// Tests that GetGroup throws ArgumentException when samAccountName is null.
+    /// Tests that GetGroupAsync throws ArgumentException when samAccountName is null.
     /// </summary>
     [Fact]
-    public void GetGroup_WhenSamAccountNameIsNull_ThrowsArgumentNullException()
+    public async Task GetGroupAsync_WhenSamAccountNameIsNull_ThrowsArgumentNullException()
     {
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryService(new DomainException("Not joined to a domain."));
@@ -52,17 +52,17 @@ public class GetADGroupInfoServiceTests
         var service = new GetADGroupInfoService(discoveryService, groupMapper, logger);
 
         // Act
-        var act = () => service.GetGroup(null!);
+        var act = async () => await service.GetGroupAsync(null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>().WithParameterName("samAccountName");
+        await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("samAccountName");
     }
 
     /// <summary>
-    /// Tests that GetGroup throws DomainException when samAccountName is empty (empty string is not null, so discovery is called).
+    /// Tests that GetGroupAsync throws DomainException when samAccountName is empty (empty string is not null, so discovery is called).
     /// </summary>
     [Fact]
-    public void GetGroup_WhenSamAccountNameIsEmpty_ThrowsDomainException()
+    public async Task GetGroupAsync_WhenSamAccountNameIsEmpty_ThrowsDomainException()
     {
         // Arrange
         var discoveryService = new ThrowingADDomainDiscoveryService(new DomainException("Not joined to a domain."));
@@ -71,9 +71,9 @@ public class GetADGroupInfoServiceTests
         var service = new GetADGroupInfoService(discoveryService, groupMapper, logger);
 
         // Act
-        var act = () => service.GetGroup("");
+        var act = async () => await service.GetGroupAsync("");
 
         // Assert
-        act.Should().Throw<DomainException>().WithMessage("Not joined to a domain.");
+        await act.Should().ThrowAsync<DomainException>().WithMessage("Not joined to a domain.");
     }
 }

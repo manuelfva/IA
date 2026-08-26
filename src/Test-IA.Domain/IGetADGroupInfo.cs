@@ -9,11 +9,11 @@ public interface IGetADGroupInfo
     /// Retrieves group information from Active Directory by the group's samAccountName.
     /// </summary>
     /// <param name="samAccountName">The samAccountName of the group to search for.</param>
-    /// <returns>A record containing the group's displayName and member attributes.</returns>
+    /// <returns>A task containing a record with the group's displayName and member attributes.</returns>
     /// <exception cref="ArgumentException">Thrown when samAccountName is null or empty.</exception>
     /// <exception cref="GroupNotFoundException">Thrown when no group with the given samAccountName is found.</exception>
     /// <exception cref="DomainException">Thrown when an error occurs during the LDAP operation.</exception>
-    GroupDto GetGroup(string samAccountName);
+    Task<GroupDto> GetGroupAsync(string samAccountName);
 }
 
 /// <summary>
