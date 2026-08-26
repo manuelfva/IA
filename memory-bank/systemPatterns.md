@@ -5,22 +5,22 @@
 **Clean Architecture** with five layers:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│               Test-IA.WebApp (Presentation)                 │
-│  (Razor Pages, Glassmorphism + Aurora UI)                   │
-├─────────────────────────────────────────────────────────────┤
-│               Test-IA.ConsoleApp                            │
-│  (Composition Root, DI registration, real execution)        │
-├─────────────────────────────────────────────────────────────┤
-│               Test-IA.Application                           │
-│  (Service implementations, AD discovery, LDAP operations)   │
-├─────────────────────────────────────────────────────────────┤
-│               Test-IA.Domain                                │
-│  (Interfaces, DTOs, Domain Exceptions)                      │
-├─────────────────────────────────────────────────────────────┤
-│               Test-IA.Logging                               │
-│  (ILoggerService abstraction over Microsoft.Extensions.)    │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+|               Test-IA.WebApp (Presentation)                 |
+|  (Razor Pages, Glassmorphism + Aurora UI)                   |
++-------------------------------------------------------------+
+|               Test-IA.ConsoleApp                            |
+|  (Composition Root, DI registration, real execution)        |
++-------------------------------------------------------------+
+|               Test-IA.Application                           |
+|  (Service implementations, AD discovery, LDAP operations)   |
++-------------------------------------------------------------+
+|               Test-IA.Domain                                |
+|  (Interfaces, DTOs, Domain Exceptions)                      |
++-------------------------------------------------------------+
+|               Test-IA.Logging                               |
+|  (ILoggerService abstraction over Microsoft.Extensions.)    |
++-------------------------------------------------------------+
 ```
 
 ### Dependency Flow
@@ -61,6 +61,8 @@ Service interfaces are defined in the Domain layer:
 - `IGetADUserInfo` → `GetADUserInfoService`
 - `IGetADGroupInfo` → `GetADGroupInfoService`
 - `IGroupMembershipWriter` → `GroupMembershipWriterService`
+- `IUserWriter` → `UserWriterService`
+- `IUserGroupAuthorizationService` → `UserGroupAuthorizationService`
 
 This allows the services to be replaced or mocked in tests.
 
@@ -69,12 +71,8 @@ This allows the services to be replaced or mocked in tests.
 A generic `IAttributeMapper<TDto>` interface in the Application layer centralizes LDAP-to-DTO mapping:
 - `IAttributeMapper<TDto>` — declares `Attributes` dictionary, `Map(SearchResultEntry)` method, and `GetDisplayValues(TDto)` method
 - `UserAttributeMapper` — implements `IAttributeMapper<UserDto>`, maps 14 LDAP attributes: `displayName`, `employeeID`, `mail`, `userPrincipalName`, `info`, `mobile`, `sAMAccountName`, `streetAddress`, `l` (city), `st` (state), `postalCode`, `department`, `title`, `telephoneNumber`
-- **Authorization pattern**: `IUserGroupAuthorizationService` interface in Domain layer, `UserGroupAuthorizationService` implementation in Application layer. Both ConsoleApp and WebApp reuse the same service. ConsoleApp fails fast on authorization failure; WebApp uses ASP.NET Core policy-based authorization.
-- **Group Membership Writer pattern**: `IGroupMembershipWriter` interface in Domain layer, `GroupMembershipWriterService` implementation in Application layer. Performs LDAP `ModifyRequest` with `DirectoryAttributeOperation.Add` to add a user's DN to a group's `member` attribute, and `DirectoryAttributeOperation.Delete` to remove a user's DN from a group's `member` attribute. WebApp Groups page uses this service via `OnPostAddMember()` and `OnPostRemoveMember()`.
-- **Navbar Identity Display**: `_Layout.cshtml` displays the current Windows user's identity (`DOMAIN\Username`) in the navbar badge using `WindowsIdentity.GetCurrent()?.Name` directly in the Razor view — no services, DTOs, or DI registrations required.
-- **Extensible Logging Sink Pattern**: `ILoggingSink` interface defines the pluggable contract for logging output targets. `LoggingService` delegates to `IEnumerable<ILoggingSink>`, enabling file, console, database, Event Log, and other sinks. `FileLoggingSink` implements thread-safe append mode with `FormatMessage` method that handles both numbered placeholders (`{0}`, `{1}`) and named placeholders (`{Key}`, `{Value}`) matching `ILogger` behavior. `LoggingPipelineFactory` reads `appsettings.json` `Logging.Sinks` section and instantiates configured sinks. ConsoleApp and WebApp both register file sinks via factory. Configuration structure: `Logging.Sinks.File.Path`, `Logging.Sinks.File.MinLogLevel`. Future sinks (Database, EventLog) are added by implementing `ILoggingSink` and extending the factory.
 - `GroupAttributeMapper` — implements `IAttributeMapper<GroupDto>`, maps `displayName` + `member` DN array
-- `UserUpdateAttributeMapper` — implements `IAttributeMapper<UserUpdateRequest>`, maps 10 user update attributes using correct LDAP attribute names
+- `UserUpdateAttributeMapper` — implements `IAttributeMapper<UserUpdateRequest>`, maps 10 user update attributes using correct LDAP attribute names (`sAMAccountName`, `info`, `mobile`, `streetAddress`, `l`, `st`, `postalCode`, `department`, `title`, `telephoneNumber`)
 
 Mappers are injected via DI into their respective services, replacing the previous static `_attributeNames` dictionaries. This provides a reusable, testable pattern for future DTOs. To add a new DTO, create a new implementation of this interface (e.g., `ComputerAttributeMapper : IAttributeMapper<ComputerDto>`) and register it in DI. The Search User and Update User panels now share the same 14-attribute `GetDisplayValues()` pattern for consistent dynamic rendering.
 
@@ -90,14 +88,24 @@ This prevents redundant Active Directory queries when multiple services (authori
 
 The `ILoggerService` interface wraps `Microsoft.Extensions.Logging.ILogger` to provide a consistent logging abstraction. This decouples the console app and web app from the specific logging framework and allows for alternative logging implementations.
 
-### 8. Dynamic Display Pattern
+### 8. Extensible Logging Sink Pattern
+
+`ILoggingSink` interface defines the pluggable contract for logging output targets. `LoggingService` delegates to `IEnumerable<ILoggingSink>`, enabling file, console, database, Event Log, and other sinks.
+
+- `FileLoggingSink` — thread-safe append mode with `FormatMessage` method that handles both numbered placeholders (`{0}`, `{1}`) and named placeholders (`{Key}`, `{Value}`) matching `ILogger` behavior. `HasNumberedPlaceholders` guard avoids `FormatException` on literal curly braces (e.g., Distinguished Names).
+- `ConsoleLoggingSink` — unified formatting with `FileLoggingSink` using same `FormatMessage` and `HasNumberedPlaceholders` methods.
+- `LoggingPipelineFactory` — reads `appsettings.json` `Logging.Sinks` section and instantiates configured sinks. Configuration structure: `Logging.Sinks.File.Path`, `Logging.Sinks.File.MinLogLevel`.
+
+ConsoleApp and WebApp both register file sinks via factory. Future sinks (Database, EventLog) are added by implementing `ILoggingSink` and extending the factory.
+
+### 9. Dynamic Display Pattern
 
 Both ConsoleApp and WebApp use `IAttributeMapper<TDto>.GetDisplayValues(TDto)` for dynamic attribute rendering:
 - **ConsoleApp**: `foreach` loops over `Dictionary<string, string>` to render user/group attributes via `ILoggerService.LogInformation()`
 - **WebApp**: Razor `@foreach` loops over `Model.UserDisplayValues` and `Model.GroupDisplayValues` to render HTML table rows
 - **Benefit**: Adding new attributes to a mapper automatically shows them in all presentation layers — no hardcoded HTML or logging calls needed
 
-### 9. Windows Integrated Authentication with Group Authorization
+### 10. Windows Integrated Authentication with Group Authorization
 
 Both ConsoleApp and WebApp require users to be members of a configured Active Directory group to access the application:
 
@@ -105,6 +113,33 @@ Both ConsoleApp and WebApp require users to be members of a configured Active Di
 - **WebApp**: Uses ASP.NET Core Windows Authentication (`AddNegotiate()`) + policy-based authorization (`AddPolicy("RequiredGroup")`). `GroupAuthorizationHandler` uses `IServiceScopeFactory` to resolve scoped `IUserGroupAuthorizationService` within a scope. Non-member users receive 401 Unauthorized.
 - **Configuration**: `Authorization.RequiredGroup` in `appsettings.json` is configurable per environment. Both applications use the same `AuthorizationSettings` class.
 - **Service**: `UserGroupAuthorizationService` checks group membership via LDAP. Throws `MissingGroupException` if group not found, returns `false` if user not found or not a member.
+- **Username parsing**: Safe parsing for three formats: `DOMAIN\Username` (extracts `Username`), `user@domain.com` UPN (strips `@domain.com`), plain usernames (used as-is).
+
+### 11. ICurrentUser Abstraction
+
+`ICurrentUser` interface in the Domain layer decouples identity resolution from presentation-layer mechanisms.
+- `ConsoleCurrentUser` — reads `WindowsIdentity.GetCurrent()?.Name` and extracts the short `samAccountName` (after the last `\`).
+- `WebCurrentUser` — reads `HttpContext.User.Identity?.Name` the same way.
+
+Both return the short username required by LDAP `sAMAccountName` searches. The `UserGroupAuthorizationService` injects `ICurrentUser` instead of `WindowsIdentity` directly, enabling testability and clean separation.
+
+### 12. Self-Contained Deployment Pattern
+
+The WebApp supports self-contained deployment — the published package includes the full .NET 10.0 runtime, so no runtime installation is required on the target machine.
+
+**Publishing Pipeline** (`scripts/publish-webapp.ps1`):
+1. `dotnet clean` — removes old build artifacts
+2. `dotnet restore` — downloads NuGet packages
+3. `dotnet build --configuration Release` — compiles all projects
+4. `dotnet test` — runs unit tests (aborts on failure)
+5. `dotnet publish --self-contained true --runtime win-x64` — produces the self-contained bundle
+6. `Compress-Archive` + embedded README — wraps into a timestamped `.zip`
+
+**Project Properties**: `Test-IA.WebApp.csproj` includes `<RuntimeIdentifier>win-x64</RuntimeIdentifier>` and `<SelfContained>true</SelfContained>`. `PublishSingleFile` is kept as `false` because it causes >30s timeouts when combined with self-contained.
+
+**Deployment Package** (`releases/Test-IA.WebApp-deploy-*.zip`): ~46.5 MB containing `Test-IA.WebApp.exe`, all application DLLs, `appsettings.json`, `README-deploy.txt`, and the bundled .NET runtime (`coreclr.dll`, `hostfxr.dll`, `hostpolicy.dll`).
+
+**Deployment Steps**: Copy zip → extract → run `Test-IA.WebApp.exe` → access at `http://localhost:5000`. For production, register as a Windows service using NSSM.
 
 ## Component Relationships
 
@@ -114,6 +149,8 @@ graph TD
         console_app["Test-IA.ConsoleApp<br/>Program.cs<br/>Composition Root / DI"]
         web_app["Test-IA.WebApp<br/>Program.cs<br/>Razor Pages Pipeline"]
         page_handler["IndexModel<br/>Pages/Index.cshtml.cs<br/>Page Handler"]
+        groups_page["GroupsModel<br/>Pages/Groups.cshtml.cs<br/>Group Management"]
+        users_page["UsersModel<br/>Pages/Users.cshtml.cs<br/>User Management"]
     end
 
     subgraph Application_Layer["Application Layer"]
@@ -121,22 +158,40 @@ graph TD
         ad_discovery["ADDomainDiscoveryService<br/>Domain / DC / Base DN Discovery"]
         user_svc["GetADUserInfoService<br/>IGetADUserInfo Impl."]
         group_svc["GetADGroupInfoService<br/>IGetADGroupInfo Impl."]
+        membership_svc["GroupMembershipWriterService<br/>IGroupMembershipWriter Impl."]
+        user_writer_svc["UserWriterService<br/>IUserWriter Impl."]
+        auth_svc["UserGroupAuthorizationService<br/>IUserGroupAuthorizationService Impl."]
         ldap_helper["LdapFilterHelper<br/>LDAP Filter Escaping"]
+        user_mapper["UserAttributeMapper<br/>IAttributeMapper<UserDto>"]
+        group_mapper["GroupAttributeMapper<br/>IAttributeMapper<GroupDto>"]
+        update_mapper["UserUpdateAttributeMapper<br/>IAttributeMapper<UserUpdateRequest>"]
     end
 
     subgraph Domain_Layer["Domain Layer"]
         i_user["IGetADUserInfo<br/>User Lookup Contract"]
         i_group["IGetADGroupInfo<br/>Group Lookup Contract"]
-        user_dto["UserDto<br/>displayName, employeeID, mail, UPN"]
+        i_membership["IGroupMembershipWriter<br/>Group Write Contract"]
+        i_user_writer["IUserWriter<br/>User Update Contract"]
+        i_auth["IUserGroupAuthorizationService<br/>Authorization Contract"]
+        i_current_user["ICurrentUser<br/>Identity Abstraction"]
+        user_dto["UserDto<br/>14 LDAP attributes"]
         group_dto["GroupDto<br/>displayName, members"]
+        group_result["GroupMemberOperationResult"]
+        update_request["UserUpdateRequest"]
         domain_ex["DomainException<br/>Base Domain Exception"]
         user_not_found["UserNotFoundException"]
         group_not_found["GroupNotFoundException"]
+        access_denied["AccessDeniedException"]
+        missing_group["MissingGroupException"]
     end
 
     subgraph Logging_Layer["Logging Layer"]
         i_logger["ILoggerService<br/>Logging Interface"]
         logger_impl["LoggingService<br/>ILogger Implementation"]
+        i_sink["ILoggingSink<br/>Sink Contract"]
+        file_sink["FileLoggingSink<br/>Thread-safe file output"]
+        console_sink["ConsoleLoggingSink<br/>Console output"]
+        pipeline_factory["LoggingPipelineFactory<br/>Sink instantiation"]
     end
 
     %% Presentation → Application
@@ -144,9 +199,24 @@ graph TD
     console_app -->|depends on| user_svc
     console_app -->|depends on| group_svc
     console_app -->|depends on| ad_discovery
+    console_app -->|depends on| auth_svc
+    console_app -->|depends on| user_mapper
+    console_app -->|depends on| group_mapper
     web_app -->|depends on| svc_reg
+    web_app -->|depends on| user_svc
+    web_app -->|depends on| group_svc
+    web_app -->|depends on| membership_svc
+    web_app -->|depends on| user_writer_svc
+    web_app -->|depends on| auth_svc
+    web_app -->|depends on| user_mapper
+    web_app -->|depends on| group_mapper
+    web_app -->|depends on| update_mapper
     page_handler -->|depends on| user_svc
     page_handler -->|depends on| group_svc
+    groups_page -->|depends on| group_svc
+    groups_page -->|depends on| membership_svc
+    users_page -->|depends on| user_svc
+    users_page -->|depends on| user_writer_svc
 
     %% Presentation → Logging
     console_app -->|uses| logger_impl
@@ -156,61 +226,74 @@ graph TD
     %% Application → Domain
     svc_reg -->|registers| i_user
     svc_reg -->|registers| i_group
+    svc_reg -->|registers| i_membership
+    svc_reg -->|registers| i_user_writer
+    svc_reg -->|registers| i_auth
+    svc_reg -->|registers| i_current_user
     user_svc -->|implements| i_user
     user_svc -->|uses| user_dto
     user_svc -->|uses| ad_discovery
     user_svc -->|uses| ldap_helper
+    user_svc -->|uses| user_mapper
     group_svc -->|implements| i_group
     group_svc -->|uses| group_dto
     group_svc -->|uses| ad_discovery
     group_svc -->|uses| ldap_helper
+    group_svc -->|uses| group_mapper
+    membership_svc -->|implements| i_membership
+    membership_svc -->|uses| ad_discovery
+    membership_svc -->|uses| ldap_helper
+    user_writer_svc -->|implements| i_user_writer
+    user_writer_svc -->|uses| ad_discovery
+    user_writer_svc -->|uses| ldap_helper
+    user_writer_svc -->|uses| update_mapper
+    auth_svc -->|implements| i_auth
+    auth_svc -->|uses| i_current_user
+    auth_svc -->|uses| ad_discovery
+    auth_svc -->|uses| ldap_helper
     ad_discovery -->|uses| domain_ex
     user_not_found -->|inherits| domain_ex
     group_not_found -->|inherits| domain_ex
+    access_denied -->|inherits| domain_ex
+    missing_group -->|inherits| domain_ex
 
     %% Logging internal
     logger_impl -->|implements| i_logger
+    logger_impl -->|delegates to| i_sink
+    logger_impl -->|uses| file_sink
+    logger_impl -->|uses| console_sink
+    pipeline_factory -->|creates| file_sink
+    pipeline_factory -->|creates| console_sink
 ```
 
 ## Critical Implementation Paths
 
 ### User Lookup Flow
 
-1. `Program.Main` → resolves `IGetADUserInfo` from DI
+1. `Program.Main` / `IndexModel.OnPost()` → resolves `IGetADUserInfo` from DI
 2. `GetADUserInfoService.GetUser(samAccountName)` validates input
 3. Calls `ADDomainDiscoveryService.Discover()` → gets domain, DC, Base DN
 4. Creates `LdapConnection` to DC with `AuthType.Negotiate`
 5. Escapes `samAccountName` via `LdapFilterHelper.Escape()`
 6. Executes LDAP search: `(&(objectCategory=person)(objectClass=user)(sAMAccountName={escaped}))`
-7. Extracts `displayName`, `employeeID`, `mail`, `userPrincipalName`
+7. Extracts 14 attributes via `UserAttributeMapper.Map()`
 8. Returns `UserDto`
 
 ### Group Lookup Flow
 
 1. `Program.Main` / `IndexModel.OnPost()` → resolves `IGetADGroupInfo` from DI
-2. `GetADGroupInfoService.GetGroup(samAccountName)` validates input
+2. `GetADGroupInfoService.GetGroupAsync(samAccountName)` validates input
 3. Calls `ADDomainDiscoveryService.Discover()` → gets domain, DC, Base DN
 4. Creates `LdapConnection` to DC with `AuthType.Negotiate`
 5. Escapes `samAccountName` via `LdapFilterHelper.Escape()`
 6. Executes LDAP search: `(&(objectCategory=group)(sAMAccountName={escaped}))`
-7. Extracts `displayName`, `member` (as string array of Distinguished Names)
+7. Extracts attributes via `GroupAttributeMapper.Map()`
 8. Calls `ResolveMemberDisplayNamesAsync()` to resolve each member DN to its `displayName` attribute
    - For each DN, performs an LDAP search with `SearchScope.Subtree` for the `displayName` attribute
    - Falls back to DN if resolution fails (logged as warning)
 9. Returns `GroupDto` with display names instead of DNs
 
-## Design Patterns in Use
-
-- **Dependency Injection**: All services registered via `IServiceCollection`. Composition root in `Program.cs`.
-- **Service Collection Extensions**: `ServiceCollectionExtensions.AddTestIAServices()` provides a single registration method.
-- **Record Types**: `UserDto` and `GroupDto` use C# record types for immutable data transfer.
-- **Domain Exception Pattern**: Custom exceptions (`UserNotFoundException`, `GroupNotFoundException`) inheriting from `DomainException` for domain-specific error handling.
-- **Facade Pattern**: `ADDomainDiscoveryService` encapsulates the complexity of domain, DC, and Base DN discovery behind a single `Discover()` method.
-- **Caching / Flyweight**: `ADDomainDiscoveryService.Discover()` caches its result internally after the first successful call. Subsequent calls return the cached tuple without performing another LDAP discovery, preventing redundant Active Directory queries.
-- **Attribute Mapper Pattern**: `IAttributeMapper<TDto>` generic interface centralizes LDAP-to-DTO mapping. `UserAttributeMapper` and `GroupAttributeMapper` implement it. Mappers are injected via DI, providing a reusable pattern for future DTOs. Each mapper also implements `GetDisplayValues(TDto)` for dynamic console/web display.
-- **Factory Method**: Each mapper exposes a `Map(SearchResultEntry)` factory method that constructs the target DTO from an LDAP entry.
-
-### 10. Authorization Flow
+### Authorization Flow
 
 Both ConsoleApp and WebApp perform authorization checks before allowing access to AD services:
 
@@ -262,27 +345,16 @@ sequenceDiagram
 
 **WebApp**: Uses ASP.NET Core Windows Authentication (`AddNegotiate()`) + policy-based authorization (`AddPolicy("RequiredGroup")`). `GroupAuthorizationHandler` uses `IServiceScopeFactory` to resolve scoped `IUserGroupAuthorizationService` within a scope. Non-member users receive 401 Unauthorized.
 
-**ICurrentUser Abstraction**: `ICurrentUser` interface in the Domain layer decouples identity resolution from presentation-layer mechanisms. `ConsoleCurrentUser` reads `WindowsIdentity.GetCurrent()?.Name` and extracts the short `samAccountName` (after the last `\`). `WebCurrentUser` reads `HttpContext.User.Identity?.Name` the same way. Both return the short username required by LDAP `sAMAccountName` searches. The `UserGroupAuthorizationService` injects `ICurrentUser` instead of `WindowsIdentity` directly, enabling testability and clean separation.
+## Design Patterns in Use
 
-**Configuration**: `Authorization.RequiredGroup` in `appsettings.json` is configurable per environment. Both applications use the same `AuthorizationSettings` class.
-
-**Service**: `UserGroupAuthorizationService` checks group membership via LDAP. Throws `MissingGroupException` if group not found, returns `false` if user not found or not a member.
-
-### 11. Self-Contained Deployment Pattern
-
-The WebApp supports self-contained deployment — the published package includes the full .NET 10.0 runtime, so no runtime installation is required on the target machine.
-
-**Publishing Pipeline** (`scripts/publish-webapp.ps1`):
-
-1. `dotnet clean` — removes old build artifacts
-2. `dotnet restore` — downloads NuGet packages
-3. `dotnet build --configuration Release` — compiles all projects
-4. `dotnet test` — runs unit tests (aborts on failure)
-5. `dotnet publish --self-contained true --runtime win-x64` — produces the self-contained bundle
-6. `Compress-Archive` + embedded README — wraps into a timestamped `.zip`
-
-**Project Properties**: `Test-IA.WebApp.csproj` includes `<RuntimeIdentifier>win-x64</RuntimeIdentifier>` and `<SelfContained>true</SelfContained>`. `PublishSingleFile` is kept as `false` because it causes >30s timeouts when combined with self-contained.
-
-**Deployment Package** (`releases/Test-IA.WebApp-deploy-*.zip`): ~46.5 MB containing `Test-IA.WebApp.exe`, all application DLLs, `appsettings.json`, `README-deploy.txt`, and the bundled .NET runtime (`coreclr.dll`, `hostfxr.dll`, `hostpolicy.dll`).
-
-**Deployment Steps**: Copy zip → extract → run `Test-IA.WebApp.exe` → access at `http://localhost:5000`. For production, register as a Windows service using NSSM.
+- **Dependency Injection**: All services registered via `IServiceCollection`. Composition root in `Program.cs`.
+- **Service Collection Extensions**: `ServiceCollectionExtensions.AddTestIAServices()` provides a single registration method.
+- **Record Types**: `UserDto` and `GroupDto` use C# record types for immutable data transfer.
+- **Domain Exception Pattern**: Custom exceptions (`UserNotFoundException`, `GroupNotFoundException`, `AccessDeniedException`, `MissingGroupException`) inheriting from `DomainException` for domain-specific error handling.
+- **Facade Pattern**: `ADDomainDiscoveryService` encapsulates the complexity of domain, DC, and Base DN discovery behind a single `Discover()` method.
+- **Caching / Flyweight**: `ADDomainDiscoveryService.Discover()` caches its result internally after the first successful call. Subsequent calls return the cached tuple without performing another LDAP discovery.
+- **Attribute Mapper Pattern**: `IAttributeMapper<TDto>` generic interface centralizes LDAP-to-DTO mapping. `UserAttributeMapper`, `GroupAttributeMapper`, and `UserUpdateAttributeMapper` implement it. Mappers are injected via DI, providing a reusable pattern for future DTOs. Each mapper also implements `GetDisplayValues(TDto)` for dynamic console/web display.
+- **Factory Method**: Each mapper exposes a `Map(SearchResultEntry)` factory method that constructs the target DTO from an LDAP entry.
+- **Extensible Sink Pattern**: `ILoggingSink` interface defines the pluggable contract. `LoggingService` delegates to `IEnumerable<ILoggingSink>`. `LoggingPipelineFactory` reads configuration and creates sinks.
+- **Identity Abstraction**: `ICurrentUser` interface decouples identity resolution from presentation layers. `ConsoleCurrentUser` and `WebCurrentUser` implement it for different environments.
+- **Policy-Based Authorization**: ASP.NET Core `AuthorizationHandler<TRequirement>` pattern with `GroupAuthorizationRequirement` and `GroupAuthorizationHandler`.

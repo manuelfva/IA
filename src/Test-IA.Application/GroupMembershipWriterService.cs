@@ -184,16 +184,22 @@ public class GroupMembershipWriterService : IGroupMembershipWriter
 
         if (response.Entries.Count == 0)
         {
-            var exceptionType = objectCategory.Equals("group", StringComparison.OrdinalIgnoreCase)
-                ? typeof(GroupNotFoundException)
-                : typeof(UserNotFoundException);
-
-            var message = exceptionType == typeof(GroupNotFoundException)
+            var message = objectCategory.Equals("group", StringComparison.OrdinalIgnoreCase)
                 ? $"Group not found: {samAccountName}"
                 : $"User not found: {samAccountName}";
 
-            logger.LogError("{ObjectType} not found: {SamAccountName}", exceptionType == typeof(GroupNotFoundException) ? "Group" : "User", samAccountName);
-            throw (Exception)Activator.CreateInstance(exceptionType, message)!;
+            logger.LogError("{ObjectType} not found: {SamAccountName}",
+                objectCategory.Equals("group", StringComparison.OrdinalIgnoreCase) ? "Group" : "User",
+                samAccountName);
+
+            if (objectCategory.Equals("group", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new GroupNotFoundException(message);
+            }
+            else
+            {
+                throw new UserNotFoundException(message);
+            }
         }
 
         var entry = response.Entries[0];

@@ -115,7 +115,7 @@ public class GroupsModel : PageModel
     /// Handles POST requests for group search and add member operations.
     /// Routes to the appropriate handler based on the submitted Action value.
     /// </summary>
-    public IActionResult OnPost()
+    public async Task<IActionResult> OnPost()
     {
         // Route to AddMember handler when the Add Member form was submitted.
         if (Action == "AddMember")
@@ -137,7 +137,7 @@ public class GroupsModel : PageModel
 
         try
         {
-            GroupResult = _groupInfoService.GetGroup(GroupSearchTerm);
+            GroupResult = await _groupInfoService.GetGroupAsync(GroupSearchTerm);
             Error = null;
 
             GroupDisplayValues = _groupMapper.GetDisplayValues(GroupResult);

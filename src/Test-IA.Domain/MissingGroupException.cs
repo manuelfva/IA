@@ -6,6 +6,11 @@ namespace TestIA.Domain;
 public class MissingGroupException : DomainException
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="MissingGroupException"/> class.
+    /// </summary>
+    public MissingGroupException() { }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="MissingGroupException"/> class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>

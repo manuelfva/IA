@@ -187,4 +187,62 @@ public class UserGroupAuthorizationServiceTests
         // Assert
         act.Should().Throw<ArgumentNullException>().WithParameterName("settings");
     }
+
+    /// <summary>
+    /// Tests that UPN format usernames (user@domain.com) are handled without crashing.
+    /// </summary>
+    [Fact]
+    public void IsMemberOfGroup_WhenUserNameIsUpnFormat_DoesNotThrowIndexOutOfRangeException()
+    {
+        // Arrange
+        var currentUser = CreateMockCurrentUser("testuser@domain.com");
+        var discoveryService = new ThrowingADDomainDiscoveryServiceForAuth(new DomainException("Not joined to a domain."));
+        var logger = Substitute.For<ILogger<UserGroupAuthorizationService>>();
+        var options = Options.Create(new AuthorizationSettings { RequiredGroup = "IT" });
+        var service = new UserGroupAuthorizationService(discoveryService, currentUser, logger, options);
+
+        // Act
+        Exception? caught = null;
+        try
+        {
+            service.IsMemberOfGroup("IT");
+        }
+        catch (Exception ex)
+        {
+            caught = ex;
+        }
+
+        // Assert — should throw DomainException, not IndexOutOfRangeException.
+        caught.Should().BeOfType<DomainException>();
+        ((DomainException)caught).Message.Should().Be("Not joined to a domain.");
+    }
+
+    /// <summary>
+    /// Tests that plain usernames (no backslash, no @) are handled without crashing.
+    /// </summary>
+    [Fact]
+    public void IsMemberOfGroup_WhenUserNameHasNoDomainPrefix_DoesNotThrowIndexOutOfRangeException()
+    {
+        // Arrange
+        var currentUser = CreateMockCurrentUser("testuser");
+        var discoveryService = new ThrowingADDomainDiscoveryServiceForAuth(new DomainException("Not joined to a domain."));
+        var logger = Substitute.For<ILogger<UserGroupAuthorizationService>>();
+        var options = Options.Create(new AuthorizationSettings { RequiredGroup = "IT" });
+        var service = new UserGroupAuthorizationService(discoveryService, currentUser, logger, options);
+
+        // Act
+        Exception? caught = null;
+        try
+        {
+            service.IsMemberOfGroup("IT");
+        }
+        catch (Exception ex)
+        {
+            caught = ex;
+        }
+
+        // Assert — should throw DomainException, not IndexOutOfRangeException.
+        caught.Should().BeOfType<DomainException>();
+        ((DomainException)caught).Message.Should().Be("Not joined to a domain.");
+    }
 }

@@ -12,16 +12,19 @@ namespace TestIA.WebApp;
 public class GroupAuthorizationHandler : AuthorizationHandler<GroupAuthorizationRequirement>
 {
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<GroupAuthorizationHandler> _logger;
     private readonly AuthorizationSettings _settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GroupAuthorizationHandler"/> class.
     /// </summary>
     /// <param name="scopeFactory">The service scope factory for resolving scoped services.</param>
+    /// <param name="logger">Logger for authorization handler events.</param>
     /// <param name="settings">The authorization settings.</param>
-    public GroupAuthorizationHandler(IServiceScopeFactory scopeFactory, IOptions<AuthorizationSettings> settings)
+    public GroupAuthorizationHandler(IServiceScopeFactory scopeFactory, ILogger<GroupAuthorizationHandler> logger, IOptions<AuthorizationSettings> settings)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _settings = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
     }
 
@@ -50,14 +53,16 @@ public class GroupAuthorizationHandler : AuthorizationHandler<GroupAuthorization
                 context.Fail();
             }
         }
-        catch (MissingGroupException)
+        catch (MissingGroupException ex)
         {
             // Log the error and fail authorization
+            _logger.LogError(ex, "Authorization group '{GroupName}' does not exist in Active Directory. Authorization failed.", requirement.RequiredGroup);
             context.Fail();
         }
-        catch (DomainException)
+        catch (DomainException ex)
         {
             // Log the error and fail authorization
+            _logger.LogError(ex, "Domain error while checking group membership for '{GroupName}'. Authorization failed.", requirement.RequiredGroup);
             context.Fail();
         }
     }

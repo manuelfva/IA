@@ -75,8 +75,6 @@ public class GetADGroupInfoService : IGetADGroupInfo
     }
 
     /// <inheritdoc />
-
-    /// <inheritdoc />
     /// <summary>
     /// Retrieves group information by <c>sAMAccountName</c> from Active Directory.
     /// <para>
@@ -95,7 +93,7 @@ public class GetADGroupInfoService : IGetADGroupInfo
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="samAccountName"/> is null.</exception>
     /// <exception cref="GroupNotFoundException">Thrown when the group does not exist in Active Directory.</exception>
     /// <exception cref="DomainException">Thrown when an LDAP error occurs during the search.</exception>
-    public GroupDto GetGroup(string samAccountName)
+    public async Task<GroupDto> GetGroupAsync(string samAccountName)
     {
         // Validate that the input parameter is not null.
         ArgumentNullException.ThrowIfNull(samAccountName);
@@ -114,7 +112,7 @@ public class GetADGroupInfoService : IGetADGroupInfo
         try
         {
             // Safely escape the user-supplied group name to prevent LDAP injection.
-            // Special characters (\, *, (, ), null) are escaped with backslash prefixes.
+            // Special characters (\\, *, (, ), null) are escaped with backslash prefixes.
             var escapedSamAccountName = LdapFilterHelper.Escape(samAccountName);
 
             // Build the LDAP search filter to find a group with the matching sAMAccountName.
@@ -147,7 +145,7 @@ public class GetADGroupInfoService : IGetADGroupInfo
 
             // Resolve each member's Distinguished Name to its display name.
             // This performs additional LDAP searches — one per member.
-            var memberDisplayNames = ResolveMemberDisplayNamesAsync(groupDto.Members, connection).GetAwaiter().GetResult();
+            var memberDisplayNames = await ResolveMemberDisplayNamesAsync(groupDto.Members, connection);
 
             // Log the successful lookup with structured output for auditability.
             _logger.LogInformation("Found group: {DisplayName} with {MemberCount} members", groupDto.DisplayName, memberDisplayNames.Length);
