@@ -149,6 +149,7 @@ All services are registered via `ServiceCollectionExtensions.AddTestIAServices()
 - **ConsoleApp:** `appsettings.json` and `appsettings.Development.json` with structured logging configuration via `Microsoft.Extensions.Configuration.Json`.
 - **WebApp:** ASP.NET Core default configuration (`appsettings.json`, `appsettings.Development.json`, environment variables).
 - **Authorization:** `Authorization.RequiredGroup` in `appsettings.json` → the AD group `sAMAccountName` that users must be a member of to access the application.
+- **Kestrel SSL:** `Kestrel.Certificates.Default` in `appsettings.json` → binds an SSL certificate for HTTPS binding. `Subject: covadonga-srv.asturmalaga.com`, `Store: My`, `Location: LocalMachine`, `AllowInvalid: false`. See [`scripts/README-DEPLOY.md`](scripts/README-DEPLOY.md) (Step 4) for full SSL/AD CS configuration.
 
 ## Getting Started
 
@@ -384,4 +385,4 @@ Test-IA/
 
 ## Last Updated
 
-25/08/2026 16:52
+01/09/2026 08:59

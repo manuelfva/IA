@@ -65,3 +65,32 @@ RESUMEN: Para que funcione la autentificación integrada hay que hacer dos cosas
       http://covadonga-srv.asturmalaga.com:5000 1
 
 3. Crear regla inbound TCP y UDP para el puerto configurado en el servidor donde instalemos la web.
+
+
+
+ERROR CONFIGURACION KERBEROS 
+----------------------------
+Esto tiene dos errores respecto a lo que exige Kerberos/Windows Authentication:
+
+1. La clase de servicio debe ser HTTP, no https. 
+   
+   Aunque el tráfico vaya cifrado por TLS, el SPN para autenticación web siempre se registra como HTTP/... — es una convención 
+   fija de Windows/Kerberos, independiente de si usas HTTP o HTTPS por debajo.
+
+2. No debe llevar el puerto. 
+   
+   El cliente (navegador, HttpClient, etc.) solicita el ticket Kerberos para HTTP/covadonga-srv.asturmalaga.com, sin :5001, sea cual sea el puerto real de conexión.
+
+Solución:
+
+setspn -D https/covadonga-srv.asturmalaga.com:5001 asturmal\administrador
+setspn -S HTTP/covadonga-srv.asturmalaga.com asturmal\administrador
+
+Si también quieres que funcione con el nombre corto (como en tu SAN del certificado), añade:
+
+powershell
+setspn -S HTTP/covadonga-srv asturmal\administrador
+
+Después de aplicarlo:
+
+En el equipo remoto, limpia la caché de tickets Kerberos antes de reprobar: klist purge

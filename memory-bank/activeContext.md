@@ -7,6 +7,9 @@ The project has been created with all core services implemented, a WebApp presen
 ## Recent Changes
 
 - **Code Review - Placeholder Cleanup**: Removed all remaining `Authorization:***` placeholder references from source code. Fixed `WebApp/Program.cs` config key to use `"Authorization:RequiredGroup"`. Fixed `ConsoleApp/Program.cs` log message to use correct config key. Fixed `AuthorizationSettings.cs` XML documentation to use correct config key. Removed duplicate Step 4 comment in `UserGroupAuthorizationService.cs`. Removed unused `sinkCount` variable and duplicate "Register logging" comments in `WebApp/Program.cs`. Removed truncated comment in `WebApp/Program.cs`. Build: 0 errors, 0 warnings. Tests: 46/46 passed.
+- **Kestrel SSL Configuration**: Added `Kestrel.Certificates` section to `appsettings.json` for HTTPS binding. Certificate configuration: `Subject: covadonga-srv.asturmalaga.com`, `Store: My`, `Location: LocalMachine`, `AllowInvalid: false`. Documented in `scripts/README-DEPLOY.md` (Step 4 — Bind the Certificate to HTTPS URL).
+
+
 
 - **Code Review - WebApp Logging Cleanup**: Removed unused `sinkCount` variable from `WebApp/Program.cs`. Removed duplicate "Register logging" comments. Build: 0 errors, 0 warnings. Tests: 46/46 passed.
 

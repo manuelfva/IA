@@ -137,6 +137,203 @@ The application reads configuration from:
 If your domain requires LDAPS, ensure the Domain Controller has a valid certificate and the machine trusts the issuing CA.  
 The application will automatically use LDAPS when configured.
 
+## SSL Configuration via Active Directory Certificate Services (AD CS)
+
+This section describes how to obtain and install an SSL/TLS certificate from your Active Directory Certificate Services (AD CS) infrastructure, and configure the WebApp to serve HTTPS traffic.
+
+### Prerequisites
+
+- **Active Directory Certificate Services (AD CS)** role installed and configured on a server in your domain.
+- A **Web Server (Server Authentication)** certificate template available and published in AD CS.
+- The target machine must have a **Domain-joined service account** with permission to request certificates from the template.
+- The certificate **Common Name (CN)** must match the **FQDN** that external clients will use to reach the WebApp (e.g., `covadonga-srv.asturmalaga.com`).
+- The certificate must include the FQDN as a **Subject Alternative Name (SAN)** entry.
+
+### Step 1 — Verify the Certificate Template
+
+We will use **InternalWebServer** template.  
+This template was created and is already published in AD CS:
+
+```powershell
+# Install module for ADCS management
+Install-Module -Name PSPKI -Scope CurrentUser
+Import-Module PSPKI  
+
+# List all available certificate templates
+Get-CertificateTemplate | Where-Object { $_.Name -like "*InternalWebServer*" }
+
+# Verify the template details
+(Get-CertificateTemplate | Where-Object { $_.Name -like "*InternalWebServer*" }).Policies
+```
+
+Confirm the template has:
+- **Key Length**: 2048 bits minimum
+- **Cryptographic Provider**: RSA-Schannel
+- **SAN Extension**: Enabled
+- **Enrollment Permissions**: Your service account has **Read** and **Enroll**
+
+### Step 2 — Request the Certificate on the Target Machine
+
+Run the following on the **target server** (the machine that will host the WebApp) under the service account context:
+
+```powershell
+# Create a certificate request INF file (.TrimStart() removes the leading newline from the here-string)
+@"
+[NewRequest]
+Subject = "CN=covadonga-srv.asturmalaga.com"
+KeyLength = 2048
+KeyAlgorithm = RSA
+HashAlgorithm = SHA256
+Exportable = TRUE
+MachineKeySet = TRUE
+KeyUsage = 0xA0
+ProviderName = "Microsoft RSA SChannel Cryptographic Provider"
+ProviderType = 12
+RequestType = PKCS10
+
+[Extensions]
+2.5.29.17 = "{text}"
+_continue_ = "DNS=covadonga-srv.asturmalaga.com&"
+_continue_ = "DNS=covadonga-srv"
+"@.TrimStart() | Set-Content -Path certreq.inf -Encoding ASCII
+
+# Verify the file starts correctly (first line MUST be [NewRequest], no empty lines before it)
+Get-Content certreq.inf -TotalCount 3
+
+# Request the certificate from AD CS
+certreq -new certreq.inf certreq.cer
+
+# Submit the request (replace CA-SERVER and TemplateName as appropriate)
+certreq -submit -config "TORROX-SRV\asturmalaga-TORROX-SRV-CA" -attrib "certificateTemplate:InternalWebServer" certreq.cer certreq.crt
+
+# Approve the request via CA Console (if auto-approval is not configured), then:
+certreq -accept certreq.crt
+```
+
+Alternatively, if the machine has **IIS Manager** installed:
+
+1. Open **IIS Manager** → Server Certificates → **Create Certificate Request**.
+2. Fill in Common Name (FQDN), State, Country.
+3. Bit length: 2048, Cryptographic provider: Microsoft RSA SChannel Cryptographic Provider.
+4. Submit to your AD CS, then **Complete Certificate Request** and select the **Personal** certificate store.
+
+### Step 3 — Verify the Certificate Installation
+
+The certificate is already installed by `certreq -accept`. Verify it is in the **Local Machine → Personal** store:
+
+```powershell
+# List certificates matching the FQDN
+Get-ChildItem Cert:\LocalMachine\My | Where-Object { $_.Subject -like "*covadonga-srv*" }
+```
+
+Confirm the output shows your certificate with an **Expiration Date** in the future and **Key Container** populated.
+
+### Step 4 — Bind the Certificate to the HTTPS URL
+
+ASP.NET Core Kestrel reads the binding URLs from `ASPNETCORE_URLS`.
+
+To enable HTTPS, set the environment variable and bind the certificate:
+
+```powershell
+# Set the HTTPS URL
+[Environment]::SetEnvironmentVariable("ASPNETCORE_URLS", "https://+:5001", "Machine")
+
+# Bind the certificate to the port using appsettings.json
+"Kestrel": {
+    "Certificates": {
+      "Default": {
+        "Subject": "covadonga-srv.asturmalaga.com",
+        "Store": "My",
+        "Location": "LocalMachine",
+        "AllowInvalid": false
+      }
+    }
+  }
+```
+
+### Step 5 — Create SPNs for HTTPS
+
+Kerberos/Windows Authentication requires:
+
+- The service class must be HTTP, not https.
+  Even if the traffic is encrypted via TLS, the SPN for web authentication is always registered as HTTP/...   
+  It's a fixed Windows/Kerberos convention, independent of whether you use HTTP or HTTPS underneath.  
+
+- It must not include the port.
+  The client (browser, HttpClient, etc.) requests the Kerberos ticket for HTTP/covadonga-srv.asturmalaga.com without :5001,   
+  regardless of the actual connection port.
+
+```powershell
+setspn -S HTTP/covadonga-srv.asturmalaga.com asturmal\administrador
+setspn -S HTTP/covadonga-srv asturmal\administrador
+setspn -Q HTTP/covadonga-srv.asturmalaga.com
+```
+
+After applying it, on the remote machine, clear the Kerberos ticket cache before retrying: 
+```
+klist purge
+```
+
+### Step 6 — Update Firewall Rules
+
+Open the HTTPS port in the Windows Firewall:
+
+```powershell
+# Create an inbound rule for HTTPS
+New-NetFirewallRule -DisplayName "Test-IA.WebApp HTTPS" `
+    -Direction Inbound `
+    -Protocol TCP `
+    -LocalPort 5001 `
+    -Action Allow
+```
+
+### Step 7 — Restart the Application
+
+```powershell
+# If running as a Windows Service
+Restart-Service Test-IA.WebApp
+
+# If running as a standalone process
+Stop-Process -Name Test-IA.WebApp -Force
+.\Test-IA.WebApp.exe
+```
+
+### Step 8 — Verify HTTPS Connectivity
+
+```powershell
+# Test the HTTPS endpoint
+Invoke-WebRequest -Uri "https://covadonga-srv.asturmalaga.com:5001" -UseBasicParsing -UseDefaultCredentials
+
+# Verify the certificate chain
+Invoke-WebRequest -Uri "https://covadonga-srv.asturmalaga.com:5001" -UseBasicParsing -UseDefaultCredentials | Select-Object -ExpandProperty Content
+```
+
+### Step 9 — Add URLs to Intranet Zone
+
+We have to add in `Computer Configuration → Policies → Administrative Templates → Windows Components → Internet Explorer → Internet Control Panel → Security Page → Site to Zone Assignment List`  
+the following two values: 
+```
+https://covadonga-srv:5001                      1
+https://covadonga-srv.asturmalaga.com:5001      1
+```
+
+### Troubleshooting SSL/AD CS
+
+| Problem | Resolution |
+|---------|------------|
+| Certificate not trusted by clients | Ensure the AD CS Root CA certificate is installed in the **Trusted Root Certification Authorities** store on every client machine, or distribute it via Group Policy. |
+| SPN registration conflict | Verify uniqueness with `setspn -Q HTTP/covadonga-srv.asturmalaga.com`. Resolve duplicates before re-registering. |
+| Kestrel fails to start on HTTPS | Check that the certificate's private key is accessible by the service account. The key must not be marked as export-only without the private key. |
+| Browser shows certificate warning | Verify the certificate CN/SAN matches the URL exactly. Check expiration dates and revocation status (CRL/OCSP). |
+
+### Security Considerations
+
+- **Certificate Rotation**: Plan certificate renewal before expiration. AD CS templates support automatic renewal if configured.
+- **Key Protection**: Ensure the certificate private key is stored securely and is not exportable in production.
+- **Chain of Trust**: All clients must trust the AD CS Root CA. Distribute via Group Policy Object (GPO) for enterprise-wide trust.
+- **Minimum Key Length**: Do not use keys shorter than 2048 bits.
+- **Revocation**: Monitor CRL/OCSP availability. Certificates marked as revoked will cause authentication failures.
+
 ## Package Contents
 
 | File/Folder | Description |

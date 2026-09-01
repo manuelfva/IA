@@ -100,6 +100,8 @@ cd "C:\WebApps\Test-IA"
 - **Authorization group**: Configurable via `appsettings.json` (`Authorization.RequiredGroup`). Both ConsoleApp and WebApp use the same `AuthorizationSettings` class.
 - **WebApp Windows Auth**: Uses `AddNegotiate()` for Kerberos/NTLM. `GroupAuthorizationHandler` uses `IServiceScopeFactory` to resolve scoped services within a scope.
 - **ICurrentUser Abstraction**: `ICurrentUser` interface in Domain layer decouples identity resolution from presentation layers. `ConsoleCurrentUser` reads `WindowsIdentity.GetCurrent()?.Name`. `WebCurrentUser` reads `HttpContext.User.Identity?.Name`. Both extract the short `samAccountName` (after the last `\`) for LDAP `sAMAccountName` searches. `UserGroupAuthorizationService` injects `ICurrentUser` instead of `WindowsIdentity` directly.
+- **Kestrel SSL Configuration**: `Kestrel.Certificates.Default` section in `appsettings.json` binds HTTPS certificate. Configuration: `Subject: covadonga-srv.asturmalaga.com`, `Store: My`, `Location: LocalMachine`, `AllowInvalid: false`. Used for HTTPS binding in production deployments. Documented in `scripts/README-DEPLOY.md` (Step 4).
+
 
 ## LDAP-Specific Technical Details
 
