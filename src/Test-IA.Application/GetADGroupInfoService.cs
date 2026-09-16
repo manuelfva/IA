@@ -95,6 +95,9 @@ public class GetADGroupInfoService : IGetADGroupInfo
     /// <exception cref="DomainException">Thrown when an LDAP error occurs during the search.</exception>
     public async Task<GroupDto> GetGroupAsync(string samAccountName)
     {
+        // Validate that the machine is domain-joined before attempting any Active Directory operations.
+        _discoveryService.ValidateDomainJoined();
+
         // Validate that the input parameter is not null.
         ArgumentNullException.ThrowIfNull(samAccountName);
 

@@ -37,7 +37,7 @@ A .NET 10.0 solution that demonstrates Active Directory user and group lookup se
 
 ## Overview
 
-**Test-IA** is a .NET 10.0 solution that demonstrates Active Directory (AD DS) user and group information retrieval using real LDAP connections with Windows Integrated Authentication. The solution includes **group-based authorization** that restricts access to users who are members of a configured Active Directory group (e.g., "Employees of IT"). Unauthorized users are redirected to a friendly **Access Denied** page. Users can **add and remove members from groups** via the WebApp Groups page.
+**Test-IA** is a .NET 10.0 solution that demonstrates Active Directory (AD DS) user and group information retrieval using real LDAP connections with Windows Integrated Authentication. The solution includes **group-based authorization** that restricts access to users who are members of a configured Active Directory group (e.g., "Employees of IT"). Unauthorized users are redirected to a friendly **Access Denied** page. Users can **add and remove members from groups** via the WebApp Groups page. A **Domain Check Middleware** detects non-domain-joined machines and returns a clear **503 Service Unavailable** error page before authentication.
 
 ## Architecture
 
@@ -74,7 +74,7 @@ graph TB
 | **Application** | Service implementations, Active Directory discovery (with internal caching), LDAP connection management, group authorization logic, DI registration, **Attribute Mapper pattern** for LDAP-to-DTO mapping with `GetDisplayValues()` for dynamic rendering. Includes `UserAttributeMapper` (14 LDAP attributes), `GroupAttributeMapper`, `UserUpdateAttributeMapper`, `GroupMembershipWriterService` (LDAP modify operations for adding group members), `ICurrentUser` implementations (`ConsoleCurrentUser`, `WebCurrentUser`) for identity resolution, and `CurrentUserMockHelper` for test mocking. |
 | **Logging** | `ILoggerService` abstraction wrapping `Microsoft.Extensions.Logging.ILogger` |
 | **ConsoleApp** | Composition root, service registration, authorization check, and demonstration of real AD operations with dynamic attribute display via `GetDisplayValues()` |
-| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()` for User, Group, and Update operations. User Search panel displays all 14 LDAP attributes dynamically. User Update card supports all 10 LDAP attributes with dynamic form field rendering. **Groups.cshtml** dedicated page for group search, adding members to groups, and removing members from groups via `IGroupMembershipWriter` (single form with `Action` button routing). Two distinct sections (Users and Groups) with visual differentiation. Glassmorphism + Aurora UI. Navbar badge displays the current Windows user's identity (`DOMAIN\\Username`) via `WindowsIdentity.GetCurrent()?.Name`. Logging service uses extensible sink pattern (`ILoggingSink`) → file, console, database, Event Log sinks are pluggable via `appsettings.json` `Logging.Sinks` section. |
+| **WebApp** | ASP.NET Core Razor Pages presentation layer with HTML5 interface, dynamic attribute display via `GetDisplayValues()` for User, Group, and Update operations. User Search panel displays all 14 LDAP attributes dynamically. User Update card supports all 10 LDAP attributes with dynamic form field rendering. **Groups.cshtml** dedicated page for group search, adding members to groups, and removing members from groups via `IGroupMembershipWriter` (single form with `Action` button routing). Two distinct sections (Users and Groups) with visual differentiation. Glassmorphism + Aurora UI. Navbar badge displays the current Windows user's identity (`DOMAIN\\Username`) via `WindowsIdentity.GetCurrent()?.Name`. Logging service uses extensible sink pattern (`ILoggingSink`) → file, console, database, Event Log sinks are pluggable via `appsettings.json` `Logging.Sinks` section. **Domain Check Middleware** (`Middleware/DomainCheckMiddleware.cs`) runs before authentication — detects non-domain-joined machines and returns HTTP 503 with a styled error page. Listens on **port 5002** (HTTP) / **5003** (HTTPS). |
 
 ## Projects
 
@@ -182,7 +182,9 @@ dotnet build
 dotnet run --project src/Test-IA.WebApp
 ```
 
-The web application will start a Kestrel web server and serve the Razor Pages interface at `https://localhost:5001` (or the configured HTTPS port). Open a browser and navigate to the URL to access the Active Directory lookup interface.
+The WebApp listens on **port 5002** (HTTP) and **port 5003** (HTTPS).
+
+> **Note:** On a non-domain-joined machine, the **Domain Check Middleware** will return **HTTP 503 Service Unavailable** with a styled error page explaining the issue and resolution steps.
 
 **Authorization:** The web application requires Windows Integrated Authentication. Users must be authenticated via Kerberos/NTLM and be a member of the configured authorization group (e.g., "Employees of IT"). Non-authenticated or non-member users receive a 401 Unauthorized response.
 
@@ -322,13 +324,13 @@ nssm start Test-IA.WebApp
 - User account running the app must have LDAP read access to the domain and must be authorized to update users and groups managed by the app
 - Must define SPNs for the user account running the app (PROTOCOL = HTTP and/or HTTPS):
    ```powershell
-   setspn -S <PROTOCOL>/<SERVER> <DOMAIN>\<USER-SAMACCOUNTNAME>, for example: setspn -S http://covadonga-srv:5000
-   setspn -S <PROTOCOL>/<SERVER-FQDN> <DOMAIN>\<USER-SAMACCOUNTNAME>, for example: setspn -S https://covadonga-srv.asturmalaga.com:5000
+   setspn -S <PROTOCOL>/<SERVER> <DOMAIN>\<USER-SAMACCOUNTNAME>, for example: setspn -S http://covadonga-srv:5002
+   setspn -S <PROTOCOL>/<SERVER-FQDN> <DOMAIN>\<USER-SAMACCOUNTNAME>, for example: setspn -S https://covadonga-srv.asturmalaga.com:5003
    ```
 - Add service URLs to the policy `Computer Configuration -> Policies -> Administrative Templates -> Windows Components -> Internet Explorer -> Internet Control Panel -> Security Page -> Site to Zone Assignment List`:
   ```
-  <PROTOCOL>://<SERVER>:<PORT>      1, for example: http://covadonga-srv:5000                   1 
-  <PROTOCOL>://<SERVER-FQDN>:<PORT> 1, for example: http://covadonga-srv.asturmalaga.com:5000   1 
+  <PROTOCOL>://<SERVER>:<PORT>      1, for example: http://covadonga-srv:5002                   1 
+  <PROTOCOL>://<SERVER-FQDN>:<PORT> 1, for example: http://covadonga-srv.asturmalaga.com:5003   1 
   ```
 - The server where the app is running must have an domain `inbound rule` to allow TCP and UDP `<PORT>` communication  
 
@@ -385,4 +387,4 @@ Test-IA/
 
 ## Last Updated
 
-01/09/2026 08:59
+16/09/2026 19:15

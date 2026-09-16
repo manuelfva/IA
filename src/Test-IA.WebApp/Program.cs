@@ -2,12 +2,15 @@ using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Runtime.Versioning;
 using TestIA;
 using TestIA.Application;
 using TestIA.Domain;
 using TestIA.Logging;
 using TestIA.WebApp;
+using TestIA.WebApp.Middleware;
 
+[SupportedOSPlatform("windows")]
 /// <summary>
 /// Main entry point for the Test-IA Web Application.
 /// Configures the ASP.NET Core pipeline, registers services via dependency injection,
@@ -70,6 +73,10 @@ public class Program
 
         app.UseStaticFiles();
         app.UseRouting();
+
+        // Domain check middleware MUST run BEFORE authentication
+        // to provide a clear message when the machine is not domain-joined
+        app.UseMiddleware<DomainCheckMiddleware>();
 
         app.UseStatusCodePages(async context =>
         {

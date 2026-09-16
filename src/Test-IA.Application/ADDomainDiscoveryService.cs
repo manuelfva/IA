@@ -1,4 +1,7 @@
+using System;
 using System.DirectoryServices.Protocols;
+using System.DirectoryServices.ActiveDirectory;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using TestIA.Domain;
 using ADSI = System.DirectoryServices;
@@ -55,6 +58,99 @@ public class ADDomainDiscoveryService
     public ADDomainDiscoveryService(ILogger<ADDomainDiscoveryService> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    /// Checks whether the local machine is joined to an Active Directory domain.
+    /// <para>
+    /// This method performs a lightweight check using <c>Domain.GetCurrentDomain()</c> without
+    /// attempting to locate a Domain Controller or query the LDAP naming context. It is intended
+    /// for pre-flight validation before any Active Directory operations.
+    /// </para>
+    /// </summary>
+    /// <returns>
+    /// <c>true</c> if the machine is joined to an Active Directory domain; otherwise, <c>false</c>.
+    /// </returns>
+    /// <remarks>
+    /// This method does NOT throw exceptions. It returns <c>false</c> when the machine is not
+    /// domain-joined, allowing callers to display a user-friendly message instead of crashing.
+    /// </remarks>
+    public bool IsDomainJoined()
+    {
+        try
+        {
+            // Attempt to retrieve the current domain. If the machine is not domain-joined,
+            // this throws DirectoryNotFoundException or ActiveDirectoryOperationException.
+            var domain = ADS.Domain.GetCurrentDomain();
+            _logger.LogInformation("Machine is joined to Active Directory domain: {DomainName}", domain?.Name);
+            return true;
+        }
+        catch (DirectoryNotFoundException ex)
+        {
+            // The machine is not joined to any domain (workgroup or unknown).
+            _logger.LogWarning(ex, "Machine is not joined to an Active Directory domain.");
+            return false;
+        }
+        catch (ActiveDirectoryOperationException ex)
+        {
+            // The machine is not joined to any domain or the context is invalid.
+            _logger.LogWarning(ex, "Machine is not joined to an Active Directory domain (operation error).");
+            return false;
+        }
+        catch (COMException ex)
+        {
+            // A COM error occurred — the domain information is inaccessible.
+            _logger.LogWarning(ex, "Unable to determine domain membership (COM error). The machine may not be domain-joined.");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Validates that the local machine is joined to an Active Directory domain.
+    /// <para>
+    /// This method is intended for pre-flight validation before any Active Directory operations.
+    /// If the machine is not domain-joined, it throws a descriptive <see cref="DomainException"/>
+    /// with a clear message that explains the problem and how to resolve it.
+    /// </para>
+    /// </summary>
+    /// <exception cref="DomainException">
+    /// Thrown when the machine is not joined to an Active Directory domain. The exception message
+    /// includes a descriptive explanation and actionable guidance.
+    /// </exception>
+    /// <remarks>
+    /// Use this method in service implementations to fail fast with a clear error message
+    /// rather than allowing the LDAP operation to fail with a generic error.
+    /// </remarks>
+    public virtual void ValidateDomainJoined()
+    {
+        try
+        {
+            var domain = ADS.Domain.GetCurrentDomain();
+            if (domain == null)
+            {
+                throw new DomainException(
+                    "This machine is not joined to an Active Directory domain. " +
+                    "Please join the machine to the domain before using Active Directory features.");
+            }
+        }
+        catch (DirectoryNotFoundException ex)
+        {
+            throw new DomainException(
+                "This machine is not joined to an Active Directory domain. " +
+                "Please join the machine to the domain before using Active Directory features.", ex);
+        }
+        catch (ActiveDirectoryOperationException ex)
+        {
+            throw new DomainException(
+                "This machine is not joined to an Active Directory domain. " +
+                "Please join the machine to the domain before using Active Directory features.", ex);
+        }
+        catch (COMException ex)
+        {
+            throw new DomainException(
+                "Unable to determine domain membership. The machine may not be joined to an Active Directory domain. " +
+                "Please join the machine to the domain and ensure Active Directory client components are installed.", ex);
+        }
     }
 
     /// <summary>

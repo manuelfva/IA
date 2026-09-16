@@ -30,18 +30,22 @@ public static class Program
 
         var services = new ServiceCollection();
 
-        // Create logger factory using configuration and console output
-        var loggerFactory = LoggerFactory.Create(builder =>
+        // Register logging infrastructure so ILogger<T> can be resolved for any type
+        services.AddLogging(builder =>
         {
             builder.AddConfiguration(configuration.GetSection("Logging"));
             builder.AddConsole();
         });
 
-        // Create logging sinks from configuration
+        // Create logging sinks from configuration (handled separately by LoggingService)
         var sinks = LoggingPipelineFactory.CreateSinks(configuration);
 
         // Register logging
-        services.AddSingleton<ILoggerService>(sp => new LoggingService(loggerFactory.CreateLogger<LoggingService>(), sinks));
+        services.AddSingleton<ILoggerService>(sp =>
+        {
+            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+            return new LoggingService(loggerFactory.CreateLogger<LoggingService>(), sinks);
+        });
         services.AddScoped<ICurrentUser, ConsoleCurrentUser>();
         services.AddTestIAServices();
 
@@ -64,6 +68,16 @@ public static class Program
         var authorizationService = serviceProvider.GetRequiredService<IUserGroupAuthorizationService>();
         var authorizationSettings = serviceProvider.GetRequiredService<IOptions<AuthorizationSettings>>();
         var demoSettings = serviceProvider.GetRequiredService<IOptions<DemoSettings>>();
+
+        // Check domain membership before any Active Directory operations.
+        // If the machine is not domain-joined, display a clear error message and exit.
+        var discoveryService = serviceProvider.GetRequiredService<ADDomainDiscoveryService>();
+        if (!discoveryService.IsDomainJoined())
+        {
+            loggerService.LogError("This machine is not joined to an Active Directory domain. " +
+                "Active Directory features are not available. Please join the machine to the domain and try again.");
+            return;
+        }
 
         // Check authorization before proceeding
         var requiredGroup = authorizationSettings.Value.RequiredGroup;

@@ -28,6 +28,15 @@ public class ThrowingADDomainDiscoveryService : ADDomainDiscoveryService
     {
         throw _exception;
     }
+
+    /// <inheritdoc />
+    /// <summary>
+    /// Overrides ValidateDomainJoined to not throw, allowing tests to focus on Discover() behavior.
+    /// </summary>
+    public override void ValidateDomainJoined()
+    {
+        // Intentionally empty — tests control behavior via Discover() override.
+    }
 }
 
 /// <summary>

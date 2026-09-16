@@ -6,6 +6,8 @@ The project has been created with all core services implemented, a WebApp presen
 
 ## Recent Changes
 
+- **Domain Check Middleware**: Created `DomainCheckMiddleware` (`WebApp/Middleware/DomainCheckMiddleware.cs`) to detect non-domain-joined machines **before** authentication. Returns HTTP 503 with a styled HTML error page explaining the issue and resolution steps. Skips static files, favicon, and error routes. Registered in `Program.cs` **before** `UseAuthentication()`. Uses `Domain.GetCurrentDomain()` for lightweight domain membership verification. Added `[SupportedOSPlatform("windows")]` to suppress CA1416 warnings.
+- **Port Change**: Changed WebApp HTTP port from **5000** to **5002** (HTTPS from 5001 to 5003) in `launchSettings.json` to avoid socket conflicts with previous instances.
 - **Code Review - Placeholder Cleanup**: Removed all remaining `Authorization:***` placeholder references from source code. Fixed `WebApp/Program.cs` config key to use `"Authorization:RequiredGroup"`. Fixed `ConsoleApp/Program.cs` log message to use correct config key. Fixed `AuthorizationSettings.cs` XML documentation to use correct config key. Removed duplicate Step 4 comment in `UserGroupAuthorizationService.cs`. Removed unused `sinkCount` variable and duplicate "Register logging" comments in `WebApp/Program.cs`. Removed truncated comment in `WebApp/Program.cs`. Build: 0 errors, 0 warnings. Tests: 46/46 passed.
 - **Kestrel SSL Configuration**: Added `Kestrel.Certificates` section to `appsettings.json` for HTTPS binding. Certificate configuration: `Subject: covadonga-srv.asturmalaga.com`, `Store: My`, `Location: LocalMachine`, `AllowInvalid: false`. Documented in `scripts/README-DEPLOY.md` (Step 4 — Bind the Certificate to HTTPS URL).
 

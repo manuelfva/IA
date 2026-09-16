@@ -119,6 +119,9 @@ public class GetADUserInfoService : IGetADUserInfo
     /// </exception>
     public UserDto GetUser(string samAccountName)
     {
+        // Validate that the machine is domain-joined before attempting any Active Directory operations.
+        _discoveryService.ValidateDomainJoined();
+
         // Validate input: reject null values immediately (fail-fast principle).
         ArgumentNullException.ThrowIfNull(samAccountName);
 

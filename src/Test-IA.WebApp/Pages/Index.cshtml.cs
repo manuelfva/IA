@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using TestIA.Application;
 
 namespace TestIA.WebApp.Pages;
 
@@ -9,12 +10,14 @@ namespace TestIA.WebApp.Pages;
 /// Requires the user to be authenticated and a member of the configured Active Directory group.
 /// </summary>
 [Authorize(Policy = "RequiredGroup")]
-public class IndexModel : PageModel
+public class IndexModel : DomainRequiredMixin
 {
     /// <summary>
     /// Initializes a new instance of the IndexModel class.
     /// </summary>
-    public IndexModel()
+    /// <param name="domainDiscoveryService">The domain discovery service for domain membership checks.</param>
+    public IndexModel(ADDomainDiscoveryService domainDiscoveryService)
+        : base(domainDiscoveryService)
     {
     }
 }

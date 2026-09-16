@@ -13,7 +13,7 @@ namespace TestIA.WebApp.Pages;
 /// Requires the user to be authenticated and a member of the configured Active Directory group.
 /// </summary>
 [Authorize(Policy = "RequiredGroup")]
-public class GroupsModel : PageModel
+public class GroupsModel : DomainRequiredMixin
 {
     private readonly IGetADGroupInfo _groupInfoService;
     private readonly ILoggerService _logger;
@@ -23,15 +23,18 @@ public class GroupsModel : PageModel
     /// <summary>
     /// Initializes a new instance of the GroupsModel class.
     /// </summary>
+    /// <param name="domainDiscoveryService">The domain discovery service for domain membership checks.</param>
     /// <param name="groupInfoService">The group information service.</param>
     /// <param name="logger">The logging service.</param>
     /// <param name="groupMapper">The group attribute mapper for dynamic display rendering.</param>
     /// <param name="groupMembershipWriter">The group membership writer service.</param>
     public GroupsModel(
+        ADDomainDiscoveryService domainDiscoveryService,
         IGetADGroupInfo groupInfoService,
         ILoggerService logger,
         IAttributeMapper<GroupDto> groupMapper,
         IGroupMembershipWriter groupMembershipWriter)
+        : base(domainDiscoveryService)
     {
         _groupInfoService = groupInfoService ?? throw new ArgumentNullException(nameof(groupInfoService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -104,7 +107,7 @@ public class GroupsModel : PageModel
     /// <summary>
     /// Handles GET requests — clears all results and display values.
     /// </summary>
-    public void OnGet()
+    public new void OnGet()
     {
         GroupResult = null;
         GroupDisplayValues = null;
@@ -115,7 +118,7 @@ public class GroupsModel : PageModel
     /// Handles POST requests for group search and add member operations.
     /// Routes to the appropriate handler based on the submitted Action value.
     /// </summary>
-    public async Task<IActionResult> OnPost()
+    public new async Task<IActionResult> OnPost()
     {
         // Route to AddMember handler when the Add Member form was submitted.
         if (Action == "AddMember")

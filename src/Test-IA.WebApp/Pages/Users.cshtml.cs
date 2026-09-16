@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TestIA.Application;
 using TestIA.Domain;
@@ -13,7 +14,7 @@ namespace TestIA.WebApp.Pages;
 /// Requires the user to be authenticated and a member of the configured Active Directory group.
 /// </summary>
 [Authorize(Policy = "RequiredGroup")]
-public class UsersModel : PageModel
+public class UsersModel : DomainRequiredMixin
 {
     private readonly IGetADUserInfo _userInfoService;
     private readonly IUserWriter _userWriter;
@@ -24,17 +25,20 @@ public class UsersModel : PageModel
     /// <summary>
     /// Initializes a new instance of the UsersModel class.
     /// </summary>
+    /// <param name="domainDiscoveryService">The domain discovery service for domain membership checks.</param>
     /// <param name="userInfoService">The user information service.</param>
     /// <param name="userWriter">The user writer service for updating AD attributes.</param>
     /// <param name="logger">The logging service.</param>
     /// <param name="userMapper">The user attribute mapper for dynamic display rendering.</param>
     /// <param name="updateMapper">The user update attribute mapper for dynamic display rendering.</param>
     public UsersModel(
+        ADDomainDiscoveryService domainDiscoveryService,
         IGetADUserInfo userInfoService,
         IUserWriter userWriter,
         ILoggerService logger,
         IAttributeMapper<UserDto> userMapper,
         IAttributeMapper<UserUpdateRequest> updateMapper)
+        : base(domainDiscoveryService)
     {
         _userInfoService = userInfoService ?? throw new ArgumentNullException(nameof(userInfoService));
         _userWriter = userWriter ?? throw new ArgumentNullException(nameof(userWriter));
@@ -118,21 +122,31 @@ public class UsersModel : PageModel
 
     /// <summary>
     /// Handles GET requests — clears all results and display values.
+    /// <para>
+    /// This override is called after the domain check in <see cref="DomainRequiredMixin.OnGet"/>.
+    /// </para>
     /// </summary>
-    public void OnGet()
+    /// <returns>The <see cref="PageResult"/> with cleared results.</returns>
+    public override async Task<IActionResult> OnGetCoreAsync()
     {
         UserResult = null;
         UserDisplayValues = null;
         UserUpdateResult = null;
         UpdateDisplayValues = null;
         Error = null;
+
+        return Page();
     }
 
     /// <summary>
     /// Handles POST requests for both user search and user update operations.
     /// The Action form field determines which operation to perform.
+    /// <para>
+    /// This override is called after the domain check in <see cref="DomainRequiredMixin.OnPost"/>.
+    /// </para>
     /// </summary>
-    public IActionResult OnPost()
+    /// <returns>The <see cref="PageResult"/> with search/update results or errors.</returns>
+    public override async Task<IActionResult> OnPostCoreAsync()
     {
         if (string.Equals(Action, "SearchUser", StringComparison.OrdinalIgnoreCase))
         {
