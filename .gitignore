@@ -15,6 +15,7 @@ bugs/
 *.exe
 *.deps.json
 *.runtimeconfig.json
+docs/
 
 # Build output
 **/bin/
